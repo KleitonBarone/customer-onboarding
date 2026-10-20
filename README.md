@@ -1,25 +1,35 @@
 # Relay customer onboarding
 
-Relay helps an account manager take a newly signed business customer through
-information collection, document review, and account activation. Customers get a
-checklist; employees see the submitted information and its history.
+Relay helps an account manager take a newly signed retailer from missing
+information to an active account. Customers submit a four-item checklist;
+reviewers explain corrections; account managers see who needs to act next.
 
-This portfolio demo uses fictional companies and disposable local services. It
-needs no customer accounts, paid integrations, email service, or public hosting.
+![Employee queue showing statuses, owners, ages, and next actions](docs/media/queue.png)
 
-The current app includes customer submissions, private document downloads,
-reviewer approvals/correction requests, revision history, server-side demo
-sessions, workspace/customer access checks, and transactional activation/reopening.
-The employee queue includes status, owner, age, next action, and bounded filters.
-The local inbox demonstrates durable reminders without an email service.
-The recorded walkthrough is the next stage.
-See the [implementation plan](PLAN.md) for current progress.
+[Watch the 90-second English walkthrough](docs/media/walkthrough.mp4) ·
+[Transcript and screenshots](docs/WALKTHROUGH.md) ·
+[Engineering case study](docs/CASE_STUDY.md)
 
-## Try the local demo
+## What works
 
-Use Node **24.20.0**, pnpm **11.23.0**, and Docker with Compose. On this Windows
-machine, Docker runs inside WSL Ubuntu. The lifecycle commands select that engine
-automatically; Docker Desktop is not required.
+The employee queue supports status, owner, and company filters. The customer
+portal collects company details, a PDF agreement, a CSV import, and a launch
+contact. Replacements create immutable revisions and require fresh review.
+Earlier documents, decisions, correction reasons, and actors remain visible.
+
+Activation requires every mandatory current revision to be approved. Active
+accounts reject edits until an account manager explicitly reopens onboarding
+with a reason. Server-side sessions scope employees to their provider workspace
+and customers to assigned accounts, including historical file downloads.
+
+A durable PostgreSQL outbox delivers customer-action reminders to a local inbox.
+Each onboarding receives at most one reminder per UTC day. A persistent workspace
+demo clock makes the next window observable without waiting or expiring sessions.
+
+## Run it locally
+
+Use Node **24.20.0**, pnpm **11.23.0**, and Docker with Compose. Windows uses Docker
+Engine in WSL Ubuntu; Linux uses its native Docker CLI.
 
 ```sh
 pnpm install --frozen-lockfile
@@ -27,41 +37,19 @@ pnpm env:doctor
 pnpm dev
 ```
 
-Open the reported web URL, normally `http://127.0.0.1:4310`. Choose **Maya Chen**
-to open Juniper Retail's checklist. Its agreement needs a correction. Upload
-`fixtures/service-agreement.pdf`, switch to **Noah Ellis**, and approve the new
-revision. **Ada Wells** can then activate the account. Earlier revisions, review
-reasons, and actors remain in the history. **Owen Reed** belongs to a different customer; **Iris Park**
-belongs to another workspace. Neither can access Juniper's records.
+Open the reported URL, normally `http://127.0.0.1:4310`. Choose **Ada Wells** for
+the queue or **Maya Chen** for Juniper Retail. Juniper's agreement needs correction:
+upload `fixtures/service-agreement.pdf` as Maya, approve it as **Noah Ellis**,
+then activate it as Ada. The other three requirements are already approved.
+The fixtures also cover Beacon (not started), Atlas (waiting for review), Cedar
+(ready), and Lumen (active).
 
-The queue also includes Beacon (not started), Atlas (waiting for review), Cedar
-(ready to activate), and Lumen (active). Filter by status or account manager,
-or search by company. PDF agreements and UTF-8 CSV imports are limited to 2 MiB;
-both formats have synthetic examples in `fixtures/`.
-After Noah approves every mandatory current submission, Ada can activate the
-account. Active accounts reject changes until Ada explicitly reopens onboarding
-with a reason. A replacement then needs fresh review before reactivation.
+**Owen Reed** belongs to Beacon; **Iris Park** belongs to a second provider.
+Neither can retrieve Juniper's records. Ada can advance Northstar's demo date in
+the inbox to generate another reminder while Juniper still needs customer action.
+The processor checks every five seconds; no real email is sent.
 
-The persona picker is local demo authentication, not production login. All names,
-documents, companies, and activity are synthetic. Requests derive access from
-server-side sessions rather than an actor or workspace supplied by the client.
-
-Every development run migrates and seeds a new project-owned database. Stopping it
-discards that run's data, so the next run starts from the same fixtures.
-To restart fixtures during a demo, run `pnpm demo:reset` in a second terminal.
-It verifies the recorded demo process, database port, name, and marker, then
-recreates only that disposable stack. The reset command becomes the new foreground
-session; choose a persona again after it reports ready.
-
-## Verify and stop
-
-Juniper initially receives one reminder to correct its agreement. In the inbox,
-Ada can advance Northstar's demo date by 24 hours to create the next day's reminder.
-The processor checks every five seconds and persists pending work across API
-restarts. Replays produce one message per onboarding and UTC day. Draft, ready,
-active, and reviewer-only waiting records do not receive customer reminders.
-Maya sees Juniper's inbox; Owen and the other provider cannot read it. Workspace
-demo dates are independent and do not change real session expiry.
+## Verify, reset, and stop
 
 ```sh
 pnpm browser:install
@@ -70,13 +58,29 @@ pnpm env:clean
 pnpm env:status
 ```
 
-Verification builds the web/API, runs strict type and lint checks plus real
-PostgreSQL tests and two built-app Chromium journeys, checks the web/API connection, and removes its disposable
-resources. The test database and ports are separate from an active demo.
-`env:clean` also requests a graceful shutdown of this project's running demo.
-After a forced terminal stop, run it again to recover recorded leftovers.
+Verification creates separate database, storage, and ports; applies migrations and
+fixtures; runs lint, strict types, 20 PostgreSQL/API tests, builds, and two Chromium
+journeys; then removes its services. CI runs the same command on Linux. Failed
+browser checks retain bounded diagnostics. Browser installation is reused under
+`.local/browsers/`.
 
-The app uses React, TypeScript, Vite, Tailwind, TanStack Query, Fastify, ArkType,
-Drizzle, and PostgreSQL. Dependency versions and the database image digest are
-pinned. Setup details, test diagnostics, browser installation, and resource
-ownership are in [the development guide](docs/DEVELOPMENT.md).
+Every development session starts with fresh disposable data. In a second
+terminal, `pnpm demo:reset` verifies the recorded process and database identity
+before recreating that stack. It becomes the new foreground session.
+`env:clean` stops the demo gracefully and recovers recorded leftovers after a
+forced stop. Follow the [development guide](docs/DEVELOPMENT.md) for ownership,
+ports, migrations, and diagnostics.
+
+## Design and limits
+
+React, Vite, Tailwind, TanStack Query, Fastify, ArkType, Drizzle, and PostgreSQL
+form one small application. Dependencies and the database image digest are pinned.
+
+All people, companies, files, dates, and activity are synthetic. The persona picker
+is local demo authentication. PDF/CSV uploads are private and limited to 2 MiB;
+malware scanning, real identity, external email, and public hosting are outside
+this demo. Local verification establishes these scenarios; it provides no
+customer adoption or business-impact evidence.
+
+See [measured results](docs/EVIDENCE.md), [delivery PRs](docs/DELIVERY.md), and the
+[completed plan](PLAN.md).
