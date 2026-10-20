@@ -4,16 +4,19 @@ Open `C:\Users\admin\repos\customer-onboarding` as its own project and paste:
 
 ```text
 We are building my customer-onboarding portfolio project. Read README.md and
-PLAN.md first. The repository currently contains planning documents only.
+PLAN.md and docs/DEVELOPMENT.md first. The repository now has the first working
+customer submission slice and a disposable development/verification environment.
 
 I am Kleiton, a senior engineer in Brazil targeting international remote roles.
 This project should be easy for a recruiter to understand and substantial enough
 for an engineer to review. It uses fictional companies and author-performed local
 testing. Real customers, paid services, and public hosting are not required.
 
-Implement milestone 1 as a complete vertical slice. Continue through its stated
-acceptance criteria, verify the result, and update the plan to match the actual
-implementation. Defer the remaining milestones until I request them.
+Execute the full seven-PR delivery plan through all five milestones, including
+commits, pushes, draft PRs, review fixes, verified squash merges, and final cleanup.
+After the foundation PR, continue with document review, activation rules, the
+employee queue, durable reminders, browser journeys, and portfolio handoff.
+Read the current Git/PR state before continuing so completed work is not repeated.
 
 Use pnpm, strict TypeScript, React/Vite, Tailwind, TanStack Query, a small Node API,
 and local PostgreSQL as the starting architecture. Keep types inferred, avoid any,

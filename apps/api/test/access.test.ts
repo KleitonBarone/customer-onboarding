@@ -116,3 +116,55 @@ test("the persona picker is unavailable outside explicit demo mode", async () =>
     await restricted.close();
   }
 });
+
+test("a customer submission is visible to employees, audited, and scoped on writes", async () => {
+  const cookie = await session("maya");
+  const url = "/api/onboardings/juniper/requirements/juniper-company/submissions";
+  const payload = { content: "Juniper Retail Ltd, 145 Orchard Avenue", version: 0 };
+  assert.equal(
+    (
+      await app.inject({
+        method: "POST",
+        url: "/api/onboardings/beacon/requirements/beacon-company/submissions",
+        headers: { cookie },
+        payload,
+      })
+    ).statusCode,
+    404,
+  );
+  assert.equal(
+    (await app.inject({ method: "POST", url, headers: { cookie: await session("ada") }, payload }))
+      .statusCode,
+    403,
+  );
+  assert.equal(
+    (
+      await app.inject({
+        method: "POST",
+        url,
+        headers: { cookie },
+        payload: { ...payload, actorId: "ada" },
+      })
+    ).statusCode,
+    400,
+  );
+  const submission = await app.inject({ method: "POST", url, headers: { cookie }, payload });
+  assert.equal(submission.statusCode, 200, submission.body);
+  assert.equal(
+    (await app.inject({ method: "POST", url, headers: { cookie }, payload })).statusCode,
+    409,
+  );
+  const detail = detailSchema.assert(
+    (
+      await app.inject({
+        url: "/api/onboardings/juniper",
+        headers: { cookie: await session("ada") },
+      })
+    ).json(),
+  );
+  assert.equal(detail.requirements.find((item) => item.kind === "company")?.state, "submitted");
+  assert.equal(detail.onboarding.status, "in_progress");
+  assert.equal(detail.revisions.length, 1);
+  assert.equal(detail.activity.length, 1);
+  assert.equal(detail.activity[0]?.actor, "Maya Chen");
+});

@@ -70,6 +70,10 @@ export async function getOnboarding(db: Database, actor: Actor, id: string) {
     .from(s.requirements)
     .where(eq(s.requirements.onboardingId, id))
     .orderBy(asc(s.requirements.id));
+  requirements.sort(
+    (a, b) =>
+      s.requirementKind.enumValues.indexOf(a.kind) - s.requirementKind.enumValues.indexOf(b.kind),
+  );
   const revisions = await db
     .select({
       id: s.revisions.id,

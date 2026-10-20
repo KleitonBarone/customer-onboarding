@@ -173,18 +173,25 @@ Never infer that an arbitrary connection string is disposable.
 
 ### 1. Foundation and first vertical slice
 
-- [ ] Scaffold the smallest web/API/database structure and initial migrations.
-- [ ] Add environment diagnostics, isolated verification, and scoped cleanup commands.
-- [ ] Add workspace and customer membership plus synthetic sessions.
-- [ ] Seed one onboarding and show its checklist in the customer portal.
-- [ ] Let the customer submit one requirement and show it in the employee view.
-- [ ] Record working setup, migration, seed, development, and check commands.
-- [ ] Inspect the first slice in the browser and verify cleanup on failure/interruption.
+- [x] Scaffold the smallest web/API/database structure and initial migrations.
+- [x] Add environment diagnostics, isolated verification, and scoped cleanup commands.
+- [x] Add workspace and customer membership plus synthetic sessions.
+- [x] Seed one onboarding and show its checklist in the customer portal.
+- [x] Let the customer submit one requirement and show it in the employee view.
+- [x] Record working setup, migration, seed, development, and check commands.
+- [x] Inspect the first slice in the browser and verify cleanup on failure/interruption.
 
 Done when a fresh local install can show one submission in both views and an
 unrelated customer cannot retrieve it by changing a URL or API identifier. The
 verification command must reproduce that result with disposable services and
 clean up its resources, including after failure or interruption.
+
+Implemented in the foundation delivery PR. Local evidence includes five real
+PostgreSQL/API tests, two successful fresh verification runs of the submission
+slice, a browser submission/employee/denied-access/persona-switch journey, narrow
+layout inspection, controlled failure cleanup, and orphan recovery after a forced
+terminal stop. See [development details](docs/DEVELOPMENT.md) for the Windows WSL
+keep-alive and forced-stop recovery behavior. Remaining milestones are pending.
 
 ### 2. Review and activation
 

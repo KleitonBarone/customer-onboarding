@@ -1,26 +1,57 @@
-# Customer onboarding
+# Relay customer onboarding
 
-A planned B2B application for taking a newly signed customer through information
-collection, document review, and account activation. Account managers see what is
-blocked; customers see what they need to do next.
+Relay helps an account manager take a newly signed business customer through
+information collection, document review, and account activation. Customers get a
+checklist; employees see the submitted information and its history.
 
-This is a portfolio project built around fictional companies and local services.
-It does not require sales, customer access, email delivery, or a paid integration.
+This portfolio demo uses fictional companies and disposable local services. It
+needs no customer accounts, paid integrations, email service, or public hosting.
 
-**Status: planning only.** Application code, installation commands, and demo
-recordings have not been added yet. Start with the [implementation plan](PLAN.md).
-For a new development conversation, use [the thread starter](THREAD_START.md).
+The first working slice includes customer submissions, employee visibility,
+server-side demo sessions, and workspace/customer access checks. Document review,
+activation, reminders, and the recorded walkthrough are the next delivery stages.
+See the [implementation plan](PLAN.md) for current progress.
 
-The planned demo follows a customer from an incomplete application through a
-rejected document, a corrected submission, and activation. A second organization
-demonstrates that customer data and files remain isolated. A local notification
-inbox makes reminders visible without sending email.
+## Try the local demo
 
-The intended stack is React, TypeScript, Vite, Tailwind, TanStack Query, a Node.js
-API, and PostgreSQL. These are starting decisions; dependency versions and working
-commands will be recorded when the first implementation milestone is built.
+Use Node **24.20.0**, pnpm **11.23.0**, and Docker with Compose. On this Windows
+machine, Docker runs inside WSL Ubuntu. The lifecycle commands select that engine
+automatically; Docker Desktop is not required.
 
-Evaluation will use repeatable seeded scenarios, focused authorization and
-workflow tests, screenshots, and an English walkthrough. Any reported results
-will identify their local test setup. There are no customer adoption or business
-impact claims.
+```sh
+pnpm install --frozen-lockfile
+pnpm env:doctor
+pnpm dev
+```
+
+Open the reported web URL, normally `http://127.0.0.1:4310`. Choose **Maya Chen**
+to open Juniper Retail's checklist. Add company details and submit them for review.
+Switch to **Ada Wells**, open Juniper Retail, and see the submission and its actor
+in the activity history. **Owen Reed** belongs to a different customer; **Iris Park**
+belongs to another workspace. Neither can access Juniper's records.
+
+The persona picker is local demo authentication, not production login. All names,
+documents, companies, and activity are synthetic. Requests derive access from
+server-side sessions rather than an actor or workspace supplied by the client.
+
+Every development run migrates and seeds a new project-owned database. Stopping it
+discards that run's data, so the next run starts from the same fixtures.
+
+## Verify and stop
+
+```sh
+pnpm verify
+pnpm env:clean
+pnpm env:status
+```
+
+Verification builds the web/API, runs strict type and lint checks plus real
+PostgreSQL tests, checks the built web/API connection, and removes its disposable
+resources. The test database and ports are separate from an active demo.
+`env:clean` also requests a graceful shutdown of this project's running demo.
+After a forced terminal stop, run it again to recover recorded leftovers.
+
+The app uses React, TypeScript, Vite, Tailwind, TanStack Query, Fastify, ArkType,
+Drizzle, and PostgreSQL. Dependency versions and the database image digest are
+pinned. Setup details, test diagnostics, browser installation, and resource
+ownership are in [the development guide](docs/DEVELOPMENT.md).

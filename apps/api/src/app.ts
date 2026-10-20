@@ -3,12 +3,13 @@ import cookie from "@fastify/cookie";
 import { type } from "arktype";
 import { eq } from "drizzle-orm";
 import Fastify from "fastify";
-import { sessionInput } from "../../../packages/contracts/src/index.js";
+import { sessionInput, submissionInput } from "../../../packages/contracts/src/index.js";
 import { ApiError, actorFor, hashToken } from "./access.js";
 import type { Database } from "./database.js";
 import { getOnboarding, listOnboardings } from "./queries.js";
 import * as s from "./schema.js";
 import { demoNow } from "./seed.js";
+import { submitContent } from "./submissions.js";
 
 export async function createApp(
   db: Database,
@@ -37,6 +38,8 @@ export async function createApp(
       ![
         `http://127.0.0.1:${process.env.UI_PORT ?? 4310}`,
         `http://127.0.0.1:${process.env.API_PORT ?? 4311}`,
+        `http://localhost:${process.env.UI_PORT ?? 4310}`,
+        `http://localhost:${process.env.API_PORT ?? 4311}`,
       ].includes(origin)
     )
       throw new ApiError(403, "This action must start from the local application.");
@@ -91,6 +94,22 @@ export async function createApp(
   );
   app.get<{ Params: { id: string } }>("/api/onboardings/:id", async (request) =>
     getOnboarding(db, await actorFor(db, request, now()), request.params.id),
+  );
+  app.post<{ Params: { id: string; requirementId: string } }>(
+    "/api/onboardings/:id/requirements/:requirementId/submissions",
+    async (request) => {
+      const actor = await actorFor(db, request, now());
+      const input = submissionInput(request.body);
+      if (input instanceof type.errors) throw new ApiError(400, input.summary);
+      return submitContent(
+        db,
+        actor,
+        request.params.id,
+        request.params.requirementId,
+        input,
+        now(),
+      );
+    },
   );
   return app;
 }

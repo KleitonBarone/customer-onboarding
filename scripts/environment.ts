@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import {
   appendFile,
   mkdir,
@@ -9,6 +10,7 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import path from "node:path";
 import { Writable } from "node:stream";
@@ -31,8 +33,10 @@ const manifestSchema = type({
   status: "'running' | 'cleaned' | 'cleanup_failed'",
   createdAt: "string",
   owner: "number",
+  "ownerIdentity?": "string",
+  "mode?": "'dev' | 'verify'",
   "subnet?": "string",
-  processes: type({ pid: "number", identity: "string" }).array(),
+  processes: type({ pid: "number", identity: "string", "keepAlive?": "boolean" }).array(),
   ports: { ui: "number", api: "number", db: "number" },
 });
 type Manifest = typeof manifestSchema.infer;
@@ -195,8 +199,8 @@ async function manifests() {
 }
 
 async function cleanup(manifest: Manifest) {
-  for (const child of manifest.processes.toReversed()) {
-    if ((await identity(child.pid)) !== child.identity) continue;
+  const stop = async (child: Manifest["processes"][number]) => {
+    if ((await identity(child.pid)) !== child.identity) return;
     if (windows)
       await command("taskkill.exe", ["/PID", String(child.pid), "/T", "/F"]).result.catch(
         async (error: unknown) => {
@@ -210,7 +214,9 @@ async function cleanup(manifest: Manifest) {
         /* A child may have exited after its identity check. */
       }
     }
-  }
+  };
+  for (const child of manifest.processes.toReversed().filter((item) => !item.keepAlive))
+    await stop(child);
   await compose(manifest, ["down", "--volumes", "--remove-orphans", "--timeout", "5"]);
   const remaining = await docker([
     "ps",
@@ -219,6 +225,7 @@ async function cleanup(manifest: Manifest) {
     `label=com.docker.compose.project=${manifest.project}`,
   ]);
   if (remaining.trim()) throw new Error(`Containers remain for ${manifest.project}`);
+  for (const child of manifest.processes.filter((item) => item.keepAlive)) await stop(child);
   for (const child of manifest.processes) {
     if ((await identity(child.pid)) === child.identity)
       throw new Error(`Owned process ${child.pid} is still running`);
@@ -286,6 +293,8 @@ async function run(mode: "dev" | "verify") {
     status: "running",
     createdAt: new Date().toISOString(),
     owner: process.pid,
+    ownerIdentity: (await identity(process.pid)) ?? "",
+    mode,
     subnet: await availableSubnet(),
     processes: [],
     ports: {
@@ -305,6 +314,7 @@ async function run(mode: "dev" | "verify") {
     STORAGE_ROOT: path.join(directory, "uploads"),
     BASE_URL: `http://127.0.0.1:${manifest.ports.ui}`,
     DEMO_RUN_ID: id,
+    PLAYWRIGHT_BROWSERS_PATH: path.join(root, ".local", "browsers"),
   };
   let interrupted = false;
   let failed = false;
@@ -335,7 +345,7 @@ async function run(mode: "dev" | "verify") {
     },
   });
   const active: ReturnType<typeof spawn>[] = [];
-  const start = async (args: string[], binary = process.execPath) => {
+  const start = async (args: string[], binary = process.execPath, keepAlive = false) => {
     const child = spawn(binary, args, {
       cwd: root,
       env: environment,
@@ -349,7 +359,7 @@ async function run(mode: "dev" | "verify") {
     child.on("error", (error) => log.write(`${error.message}\n`));
     if (!child.pid) throw new Error("Child process did not start");
     const started = await identity(child.pid);
-    if (started) manifest.processes.push({ pid: child.pid, identity: started });
+    if (started) manifest.processes.push({ pid: child.pid, identity: started, keepAlive });
     await save(manifest);
     return child;
   };
@@ -368,6 +378,7 @@ async function run(mode: "dev" | "verify") {
   };
   console.log(`Run ${id}: ${manifest.project}; database port ${manifest.ports.db}`);
   try {
+    if (windows) await start(["-d", "Ubuntu", "--exec", "sleep", "infinity"], "wsl.exe", true);
     if (process.env.VERIFY_FAIL_AT === "before-database")
       throw new Error("Controlled startup failure");
     console.log((await compose(manifest, ["up", "-d", "--wait", "--wait-timeout", "60"])).trim());
@@ -384,18 +395,17 @@ async function run(mode: "dev" | "verify") {
       `http://127.0.0.1:${manifest.ports.api}/api/health`,
       () => interrupted || apiProcess.exitCode !== null,
     );
-    const web = pnpmCommand([
-      "--filter",
-      "@onboarding/web",
-      "exec",
-      "vite",
+    const webRequire = createRequire(path.join(root, "apps", "web", "package.json"));
+    const vite = path.join(path.dirname(webRequire.resolve("vite/package.json")), "bin", "vite.js");
+    await start([
+      vite,
       ...(mode === "verify" ? ["preview"] : []),
+      "apps/web",
       "--host",
       "127.0.0.1",
       "--port",
       String(manifest.ports.ui),
     ]);
-    await start(web.args, web.binary);
     await ready(environment.BASE_URL, () => interrupted);
     console.log(
       `READY web=${environment.BASE_URL} api=http://127.0.0.1:${manifest.ports.api}; manifest=${path.join(directory, "manifest.json")}`,
@@ -408,7 +418,7 @@ async function run(mode: "dev" | "verify") {
       };
       if (pkg.scripts["test:e2e"]) await invoke(["test:e2e"]);
     } else {
-      while (!interrupted) {
+      while (!interrupted && !existsSync(path.join(directory, "stop"))) {
         if (active.some((child) => child.exitCode !== null && child.exitCode !== 0))
           throw new Error("A development service exited; inspect the run log");
         await delay(250);
@@ -481,8 +491,29 @@ else if (mode === "status") {
 } else if (mode === "clean") {
   for (const manifest of await manifests()) {
     if (manifest.status === "cleaned") continue;
-    if (await identity(manifest.owner))
-      throw new Error(`Run ${manifest.id} still has a live owner. Stop that run first.`);
+    const owner = await identity(manifest.owner);
+    if (owner) {
+      if (owner !== manifest.ownerIdentity || manifest.mode !== "dev")
+        throw new Error(`Run ${manifest.id} still has a live owner. Stop that run first.`);
+      await writeFile(
+        path.join(await ownedRunDirectory(manifest.id), "stop"),
+        "Requested shutdown\n",
+      );
+      const deadline = Date.now() + 30_000;
+      while (Date.now() < deadline) {
+        const current = manifestSchema.assert(
+          JSON.parse(await readFile(path.join(directoryFor(manifest.id), "manifest.json"), "utf8")),
+        );
+        if (current.status === "cleaned") break;
+        await delay(250);
+      }
+      const current = manifestSchema.assert(
+        JSON.parse(await readFile(path.join(directoryFor(manifest.id), "manifest.json"), "utf8")),
+      );
+      if (current.status !== "cleaned")
+        throw new Error(`Run ${manifest.id} has not finished shutdown; inspect env:status.`);
+      continue;
+    }
     await cleanup(manifest);
   }
 } else if (mode === "dev" || mode === "verify") await run(mode);

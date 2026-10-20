@@ -13,6 +13,7 @@
     "env:doctor": "tsx scripts/environment.ts doctor",
     "env:status": "tsx scripts/environment.ts status",
     "env:clean": "tsx scripts/environment.ts clean",
+    "browser:install": "tsx scripts/install-browser.ts",
     "lint": "biome check .",
     "format": "biome check --write .",
     "typecheck": "tsc --noEmit",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
+    "@playwright/test": "1.64.1",
     "@types/node": "24.10.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
