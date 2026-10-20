@@ -49,15 +49,15 @@ export function Queue({
           <select
             id="queue-status"
             value={filters.status ?? ""}
-            onChange={(event) =>
+            onChange={(event) => {
+              const next = { ...filters, offset: 0 };
+              delete next.status;
               setFilters(
-                queueInput.assert({
-                  ...filters,
-                  status: event.target.value || undefined,
-                  offset: 0,
-                }),
-              )
-            }
+                event.target.value
+                  ? queueInput.assert({ ...next, status: event.target.value })
+                  : next,
+              );
+            }}
           >
             <option value="">All statuses</option>
             <option value="draft">Not started</option>
@@ -71,9 +71,12 @@ export function Queue({
           <select
             id="queue-owner"
             value={filters.ownerId ?? ""}
-            onChange={(event) =>
-              setFilters({ ...filters, ownerId: event.target.value || undefined, offset: 0 })
-            }
+            onChange={(event) => {
+              const next = { ...filters, offset: 0 };
+              delete next.ownerId;
+              if (event.target.value) next.ownerId = event.target.value;
+              setFilters(next);
+            }}
           >
             <option value="">All account managers</option>
             {owners.map((owner) => (
