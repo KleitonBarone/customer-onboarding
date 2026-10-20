@@ -214,10 +214,10 @@ invalidation. Earlier successful revisions and reviews remain available.
 
 ### 3. Useful employee workflow
 
-- [ ] Add the work queue with status, account owner, age, and next required action.
-- [ ] Add bounded filtering, useful empty states, and clear permission messages.
+- [x] Add the work queue with status, account owner, age, and next required action.
+- [x] Add bounded filtering, useful empty states, and clear permission messages.
 - [ ] Add the local notification inbox and durable reminder deduplication.
-- [ ] Seed the remaining scenarios and add a scoped reset path.
+- [x] Seed the remaining scenarios and add a scoped reset path.
 
 Done when a user can identify and resolve a blocked onboarding without consulting
 the database, and replaying a reminder run does not create duplicate messages.

@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import Fastify from "fastify";
 import {
   activateInput,
+  queueInput,
   reopenInput,
   reviewInput,
   sessionInput,
@@ -16,7 +17,8 @@ import { ApiError, actorFor, hashToken, onboardingFor } from "./access.js";
 import { changeActivation } from "./activation.js";
 import type { Database } from "./database.js";
 import { downloadFile, uploadFile } from "./files.js";
-import { getOnboarding, listOnboardings } from "./queries.js";
+import { getOnboarding } from "./queries.js";
+import { listOnboardings } from "./queue.js";
 import { reviewRequirement } from "./reviews.js";
 import * as s from "./schema.js";
 import { demoNow } from "./seed.js";
@@ -76,6 +78,7 @@ export async function createApp(
     return db
       .select({
         id: s.memberships.id,
+        workspaceId: s.workspaces.id,
         name: s.users.name,
         role: s.memberships.role,
         workspaceName: s.workspaces.name,
@@ -112,8 +115,18 @@ export async function createApp(
     return { ok: true };
   });
   app.get("/api/session", async (request) => actorFor(db, request, now()));
-  app.get("/api/onboardings", async (request) =>
-    listOnboardings(db, await actorFor(db, request, now())),
+  app.get<{ Querystring: Record<string, string | undefined> }>(
+    "/api/onboardings",
+    async (request) => {
+      const actor = await actorFor(db, request, now());
+      const input = queueInput({
+        ...request.query,
+        limit: Number(request.query.limit ?? 20),
+        offset: Number(request.query.offset ?? 0),
+      });
+      if (input instanceof type.errors) throw new ApiError(400, input.summary);
+      return listOnboardings(db, actor, input, now());
+    },
   );
   app.get<{ Params: { id: string } }>("/api/onboardings/:id", async (request) =>
     getOnboarding(db, await actorFor(db, request, now()), request.params.id),

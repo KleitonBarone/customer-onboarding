@@ -1,8 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import type { Actor, OnboardingDetail } from "../../../packages/contracts/src/index.js";
+import {
+  type Actor,
+  type OnboardingDetail,
+  queueInput,
+} from "../../../packages/contracts/src/index.js";
 import { ActivationPanel } from "./ActivationPanel.js";
 import { api, request } from "./api.js";
+import { Queue } from "./Queue.js";
 import { RequirementCard } from "./RequirementCard.js";
 
 const labels = {
@@ -25,6 +30,7 @@ function currentId() {
 export function App() {
   const queries = useQueryClient();
   const [generation, setGeneration] = useState(0);
+  const [filters, setFilters] = useState(() => queueInput.assert({ limit: 20, offset: 0 }));
   const [selectedId, setSelectedId] = useState(currentId);
   const personas = useQuery({
     queryKey: ["personas", generation],
@@ -37,8 +43,8 @@ export function App() {
   });
   const actor = session.data;
   const list = useQuery({
-    queryKey: ["onboardings", generation],
-    queryFn: ({ signal }) => api.onboardings(signal),
+    queryKey: ["onboardings", generation, filters],
+    queryFn: ({ signal }) => api.onboardings(filters, signal),
     enabled: !!actor,
   });
   const id = selectedId ?? (actor?.role === "customer" ? list.data?.[0]?.id : undefined);
@@ -64,6 +70,7 @@ export function App() {
     },
     onSuccess: () => {
       queries.clear();
+      setFilters(queueInput.assert({ limit: 20, offset: 0 }));
       navigate(null);
       setGeneration((value) => value + 1);
     },
@@ -185,49 +192,21 @@ export function App() {
                 </div>
                 <span className="count-label">{list.data?.length ?? 0} customers</span>
               </div>
-              {list.isPending ? (
-                <p role="status">Loading customers…</p>
-              ) : list.error ? (
-                <p role="alert" className="error">
-                  {list.error.message}
-                </p>
-              ) : (
-                <div className="queue">
-                  <div className="queue-heading">
-                    <span>Customer</span>
-                    <span>Status</span>
-                    <span>Account manager</span>
-                  </div>
-                  {list.data?.length ? (
-                    list.data.map((record) => (
-                      <button
-                        type="button"
-                        className="queue-row"
-                        key={record.id}
-                        onClick={() => navigate(record.id)}
-                      >
-                        <span>
-                          <strong>{record.company}</strong>
-                          <small>
-                            Started{" "}
-                            {new Date(record.createdAt).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              timeZone: "UTC",
-                            })}
-                          </small>
-                        </span>
-                        <span className={`status status-${record.status}`}>
-                          {labels[record.status]}
-                        </span>
-                        <span className="owner">{record.owner}</span>
-                      </button>
-                    ))
-                  ) : (
-                    <p className="empty-state">No onboardings are assigned to this account.</p>
-                  )}
-                </div>
-              )}
+              <Queue
+                records={list.data ?? []}
+                pending={list.isPending}
+                error={list.error?.message}
+                filters={filters}
+                setFilters={setFilters}
+                onOpen={navigate}
+                onRetry={() => void list.refetch()}
+                owners={
+                  personas.data?.filter(
+                    (persona) =>
+                      persona.role === "manager" && persona.workspaceId === actor.workspaceId,
+                  ) ?? []
+                }
+              />
             </>
           )}
         </main>

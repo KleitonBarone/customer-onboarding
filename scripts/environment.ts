@@ -17,6 +17,8 @@ import { Writable } from "node:stream";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { type } from "arktype";
+import { connectDatabase } from "../apps/api/src/database.js";
+import { assertDemoDatabase } from "../apps/api/src/reset.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const runs = path.join(root, ".local", "runs");
@@ -164,10 +166,9 @@ function directoryFor(id: string) {
 }
 
 async function save(manifest: Manifest) {
-  await writeFile(
-    path.join(directoryFor(manifest.id), "manifest.json"),
-    `${JSON.stringify(manifest, null, 2)}\n`,
-  );
+  const target = path.join(directoryFor(manifest.id), "manifest.json");
+  await writeFile(`${target}.next`, `${JSON.stringify(manifest, null, 2)}\n`);
+  await rename(`${target}.next`, target);
 }
 
 async function ownedRunDirectory(id: string) {
@@ -284,7 +285,31 @@ async function doctor() {
   }
 }
 
-async function run(mode: "dev" | "verify") {
+function databaseUrl(manifest: Manifest) {
+  return `postgres://onboarding:local-disposable-only@127.0.0.1:${manifest.ports.db}/customer_onboarding_demo`;
+}
+
+async function requestStop(manifest: Manifest) {
+  const owner = await identity(manifest.owner);
+  if (!owner) {
+    await cleanup(manifest);
+    return;
+  }
+  if (owner !== manifest.ownerIdentity || manifest.mode !== "dev")
+    throw new Error(`Run ${manifest.id} still has a live owner. Stop that run first.`);
+  await writeFile(path.join(await ownedRunDirectory(manifest.id), "stop"), "Requested shutdown\n");
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    const current = manifestSchema.assert(
+      JSON.parse(await readFile(path.join(directoryFor(manifest.id), "manifest.json"), "utf8")),
+    );
+    if (current.status === "cleaned") return;
+    await delay(250);
+  }
+  throw new Error(`Run ${manifest.id} has not finished shutdown; inspect env:status.`);
+}
+
+async function run(mode: "dev" | "verify", preferred?: Manifest["ports"]) {
   const id = `${Date.now().toString(36)}-${process.pid}`;
   const directory = directoryFor(id);
   const manifest: Manifest = {
@@ -298,9 +323,15 @@ async function run(mode: "dev" | "verify") {
     subnet: await availableSubnet(),
     processes: [],
     ports: {
-      ui: await freePort(mode === "dev" ? Number(process.env.UI_PORT ?? 4310) : 0),
-      api: await freePort(mode === "dev" ? Number(process.env.API_PORT ?? 4311) : 0),
-      db: await freePort(mode === "dev" ? Number(process.env.DB_PORT ?? 55431) : 0),
+      ui: await freePort(
+        mode === "dev" ? (preferred?.ui ?? Number(process.env.UI_PORT ?? 4310)) : 0,
+      ),
+      api: await freePort(
+        mode === "dev" ? (preferred?.api ?? Number(process.env.API_PORT ?? 4311)) : 0,
+      ),
+      db: await freePort(
+        mode === "dev" ? (preferred?.db ?? Number(process.env.DB_PORT ?? 55431)) : 0,
+      ),
     },
   };
   await mkdir(directory, { recursive: true });
@@ -308,7 +339,7 @@ async function run(mode: "dev" | "verify") {
   const environment = {
     ...process.env,
     APP_ENV: "demo",
-    DATABASE_URL: `postgres://onboarding:local-disposable-only@127.0.0.1:${manifest.ports.db}/customer_onboarding_demo`,
+    DATABASE_URL: databaseUrl(manifest),
     API_PORT: String(manifest.ports.api),
     UI_PORT: String(manifest.ports.ui),
     STORAGE_ROOT: path.join(directory, "uploads"),
@@ -489,32 +520,33 @@ else if (mode === "status") {
     ).trim() || "No project containers remain",
   );
 } else if (mode === "clean") {
-  for (const manifest of await manifests()) {
-    if (manifest.status === "cleaned") continue;
-    const owner = await identity(manifest.owner);
-    if (owner) {
-      if (owner !== manifest.ownerIdentity || manifest.mode !== "dev")
-        throw new Error(`Run ${manifest.id} still has a live owner. Stop that run first.`);
-      await writeFile(
-        path.join(await ownedRunDirectory(manifest.id), "stop"),
-        "Requested shutdown\n",
-      );
-      const deadline = Date.now() + 30_000;
-      while (Date.now() < deadline) {
-        const current = manifestSchema.assert(
-          JSON.parse(await readFile(path.join(directoryFor(manifest.id), "manifest.json"), "utf8")),
-        );
-        if (current.status === "cleaned") break;
-        await delay(250);
-      }
-      const current = manifestSchema.assert(
-        JSON.parse(await readFile(path.join(directoryFor(manifest.id), "manifest.json"), "utf8")),
-      );
-      if (current.status !== "cleaned")
-        throw new Error(`Run ${manifest.id} has not finished shutdown; inspect env:status.`);
-      continue;
-    }
-    await cleanup(manifest);
+  for (const manifest of await manifests())
+    if (manifest.status !== "cleaned") await requestStop(manifest);
+} else if (mode === "reset") {
+  const active = (await manifests()).filter(
+    (manifest) => manifest.status === "running" && manifest.mode === "dev",
+  );
+  if (active.length !== 1 || !active[0])
+    throw new Error("Reset requires exactly one recorded running development demo.");
+  const previous = active[0];
+  if ((await identity(previous.owner)) !== previous.ownerIdentity)
+    throw new Error("The demo owner is no longer the recorded process.");
+  const container = (await compose(previous, ["ps", "-q", "database"])).trim();
+  if (
+    !/^[a-f0-9]+$/.test(container) ||
+    (await docker(["port", container, "5432/tcp"])).trim() !== `127.0.0.1:${previous.ports.db}`
+  )
+    throw new Error("The recorded database port does not belong to this demo.");
+  const { db, client } = connectDatabase(databaseUrl(previous));
+  try {
+    await assertDemoDatabase(db, previous.mode === "dev");
+  } finally {
+    await client.end();
   }
+  await requestStop(previous);
+  console.log(
+    "Verified demo identity and removed the previous disposable stack. Starting fresh fixtures.",
+  );
+  await run("dev", previous.ports);
 } else if (mode === "dev" || mode === "verify") await run(mode);
-else throw new Error("Expected doctor, dev, verify, status, or clean");
+else throw new Error("Expected doctor, dev, verify, status, clean, or reset");

@@ -41,6 +41,12 @@ volumes, networks, and uploads, without touching other projects or shared caches
 
 ## Browser inspection and diagnostics
 
+`pnpm demo:reset` checks the single recorded live development run, process start
+identity, Compose-published database port, database name, and demo marker before
+recreating its stack at the same ports. It accepts no arbitrary database URL.
+The command stays in the foreground as the replacement development session.
+It restores all five workflow scenarios and invalidates old demo sessions.
+
 Run `pnpm browser:install` once for a task-owned Chromium headless installation in
 `.local/browsers/`. Reuse it across checks instead of downloading another browser
 per run. Automated browser journeys will join verification in delivery PR 6.

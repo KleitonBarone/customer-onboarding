@@ -1,57 +1,9 @@
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import type { Actor } from "../../../packages/contracts/src/index.js";
 import { onboardingStatus } from "../../../packages/contracts/src/workflow.js";
 import { onboardingFor } from "./access.js";
 import type { Database } from "./database.js";
 import * as s from "./schema.js";
-
-export async function listOnboardings(db: Database, actor: Actor) {
-  const membership =
-    actor.role === "customer"
-      ? await db
-          .select({ id: s.customerMemberships.customerId })
-          .from(s.customerMemberships)
-          .where(eq(s.customerMemberships.membershipId, actor.membershipId))
-      : null;
-  if (membership?.length === 0) return [];
-  const records = await db
-    .select({ onboarding: s.onboardings, account: s.customerAccounts, owner: s.users.name })
-    .from(s.onboardings)
-    .innerJoin(s.customerAccounts, eq(s.customerAccounts.id, s.onboardings.customerId))
-    .innerJoin(s.users, eq(s.users.id, s.customerAccounts.ownerId))
-    .where(
-      and(
-        eq(s.customerAccounts.workspaceId, actor.workspaceId),
-        membership
-          ? inArray(
-              s.customerAccounts.id,
-              membership.map((item) => item.id),
-            )
-          : undefined,
-      ),
-    )
-    .orderBy(asc(s.onboardings.createdAt), asc(s.onboardings.id));
-  const allRequirements = records.length
-    ? await db
-        .select()
-        .from(s.requirements)
-        .where(
-          inArray(
-            s.requirements.onboardingId,
-            records.map(({ onboarding }) => onboarding.id),
-          ),
-        )
-    : [];
-  return records.map(({ onboarding, account, owner }) => ({
-    ...onboarding,
-    company: account.name,
-    owner,
-    status: onboardingStatus(
-      onboarding,
-      allRequirements.filter((item) => item.onboardingId === onboarding.id),
-    ),
-  }));
-}
 
 export async function getOnboarding(db: Database, actor: Actor, id: string) {
   const { onboarding, account } = await onboardingFor(db, actor, id);

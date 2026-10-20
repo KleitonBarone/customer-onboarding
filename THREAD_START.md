@@ -14,8 +14,8 @@ testing. Real customers, paid services, and public hosting are not required.
 
 Execute the full seven-PR delivery plan through all five milestones, including
 commits, pushes, draft PRs, review fixes, verified squash merges, and final cleanup.
-After the activation PR, continue with the employee queue, durable reminders,
-browser journeys, and portfolio handoff.
+After the work queue PR, continue with durable reminders, browser journeys,
+and portfolio handoff.
 Read the current Git/PR state before continuing so completed work is not repeated.
 
 Use pnpm, strict TypeScript, React/Vite, Tailwind, TanStack Query, a small Node API,

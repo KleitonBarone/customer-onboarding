@@ -49,7 +49,7 @@ export function upload(
   version: number,
   bytes: Buffer,
   filename = "agreement.pdf",
-  onboardingId = "juniper",
+  onboardingId = requirementId.slice(0, requirementId.lastIndexOf("-")),
 ) {
   const boundary = "onboarding-test-boundary";
   const payload = Buffer.concat([

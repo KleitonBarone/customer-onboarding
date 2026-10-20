@@ -12,6 +12,7 @@ export const actorSchema = type({
 export type Actor = typeof actorSchema.infer;
 export const personaSchema = type({
   id: "string",
+  workspaceId: "string",
   name: "string",
   role: roleSchema,
   workspaceName: "string",
@@ -37,7 +38,17 @@ export const onboardingSchema = type({
   version: "number",
   status: "'draft' | 'in_progress' | 'ready' | 'active'",
 });
-export const onboardingsSchema = onboardingSchema.array();
+export const queueInput = type({
+  "status?": "'draft' | 'in_progress' | 'ready' | 'active'",
+  "ownerId?": "string <= 100",
+  "search?": "string <= 80",
+  limit: "1 <= number.integer <= 50",
+  offset: "0 <= number.integer <= 10000",
+  "+": "reject",
+});
+export const onboardingsSchema = onboardingSchema
+  .and({ ownerId: "string", ageDays: "number", nextAction: "string" })
+  .array();
 export const revisionSchema = type({
   id: "string",
   requirementId: "string",
