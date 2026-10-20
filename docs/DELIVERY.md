@@ -36,6 +36,11 @@ commits, and results. Public hosting is outside this delivery sequence.
 
 ## Completed merges
 
+- [PR 4](https://github.com/KleitonBarone/customer-onboarding/pull/4), tested head
+  `10868a0`, merged as `a4b5c15`. PR/main CI and merged-main local verification
+  passed. Seventeen tests, queue filters/empty recovery, 390/900px layouts,
+  correction-to-activation, and two guarded fixture resets passed. Resources cleaned.
+
 - [PR 3](https://github.com/KleitonBarone/customer-onboarding/pull/3), tested head
   `f6d143f`, merged as `ba3ab40`. PR/main CI and merged-main local verification
   passed. Fourteen tests and a browser correction/activation/reopening journey
