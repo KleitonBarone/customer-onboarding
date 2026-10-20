@@ -272,6 +272,7 @@ small {
   margin-bottom: 24px;
 }
 .detail-grid {
+  margin-top: 24px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
   gap: 24px;
@@ -394,6 +395,35 @@ input {
   color: #2362c4;
   margin-bottom: 6px;
 }
+.activation-panel {
+  padding: 20px 24px;
+  background: #eaf2fc;
+  border-radius: 8px;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.activation-panel > div:first-child {
+  flex: 1;
+  min-width: 180px;
+}
+.activation-panel strong {
+  font-weight: 600;
+}
+.activation-panel p {
+  margin: 5px 0 0;
+  color: #4c6983;
+}
+.activation-panel.is-active {
+  background: #e3f3ed;
+}
+.activation-panel form,
+.activation-error {
+  width: 100%;
+}
 .correction-note {
   margin: 18px 0 0 46px;
   padding: 14px;
@@ -414,6 +444,10 @@ input {
   font-size: 13px;
   display: block;
   margin-bottom: 7px;
+}
+.requirement form input + label,
+.requirement form textarea + label {
+  margin-top: 14px;
 }
 .revision-history {
   margin: 18px 0 0 46px;

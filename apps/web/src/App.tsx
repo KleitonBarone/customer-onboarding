@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import type { Actor, OnboardingDetail } from "../../../packages/contracts/src/index.js";
+import { ActivationPanel } from "./ActivationPanel.js";
 import { api, request } from "./api.js";
 import { RequirementCard } from "./RequirementCard.js";
 
@@ -258,6 +259,7 @@ function Onboarding({
         </div>
         <span className={`status status-${onboarding.status}`}>{labels[onboarding.status]}</span>
       </div>
+      <ActivationPanel detail={detail} actor={actor} refresh={refresh} />
       <div className="detail-grid">
         <section className="checklist" aria-label="Onboarding checklist">
           <div className="panel-heading">

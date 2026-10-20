@@ -80,6 +80,12 @@ export const detailSchema = type({
 export type OnboardingDetail = typeof detailSchema.infer;
 export const sessionInput = type({ membershipId: "string > 0", "+": "reject" });
 export const versionInput = type("number.integer >= 0");
+export const activateInput = type({ version: "number.integer >= 0", "+": "reject" });
+export const reopenInput = type({
+  version: "number.integer >= 0",
+  reason: "0 < string <= 1000",
+  "+": "reject",
+});
 export const submissionInput = type({
   kind: "'company'",
   legalName: "0 < string <= 200",

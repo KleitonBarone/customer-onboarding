@@ -5,12 +5,15 @@ import { type } from "arktype";
 import { eq } from "drizzle-orm";
 import Fastify from "fastify";
 import {
+  activateInput,
+  reopenInput,
   reviewInput,
   sessionInput,
   submissionInput,
   versionInput,
 } from "../../../packages/contracts/src/index.js";
 import { ApiError, actorFor, hashToken, onboardingFor } from "./access.js";
+import { changeActivation } from "./activation.js";
 import type { Database } from "./database.js";
 import { downloadFile, uploadFile } from "./files.js";
 import { getOnboarding, listOnboardings } from "./queries.js";
@@ -195,5 +198,25 @@ export async function createApp(
       );
     },
   );
+  app.post<{ Params: { id: string } }>("/api/onboardings/:id/activate", async (request) => {
+    const actor = await actorFor(db, request, now());
+    const input = activateInput(request.body);
+    if (input instanceof type.errors) throw new ApiError(400, input.summary);
+    return changeActivation(db, actor, request.params.id, input.version, "activate", now());
+  });
+  app.post<{ Params: { id: string } }>("/api/onboardings/:id/reopen", async (request) => {
+    const actor = await actorFor(db, request, now());
+    const input = reopenInput(request.body);
+    if (input instanceof type.errors) throw new ApiError(400, input.summary);
+    return changeActivation(
+      db,
+      actor,
+      request.params.id,
+      input.version,
+      "reopen",
+      now(),
+      input.reason,
+    );
+  });
   return app;
 }
