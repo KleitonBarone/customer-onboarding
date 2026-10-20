@@ -121,6 +121,7 @@ export const reviews = pgTable("reviews", {
 });
 export const activity = pgTable("activity", {
   id: text("id").primaryKey(),
+  position: integer("position").generatedAlwaysAsIdentity(),
   onboardingId: text("onboarding_id")
     .notNull()
     .references(() => onboardings.id),

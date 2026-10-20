@@ -71,3 +71,10 @@ HttpOnly cookies backed by hashed tokens. Customer and workspace checks happen
 on the server for reads and writes. The local persona picker, synthetic clock,
 and local files are explicit demo limits; public hosting and production identity
 are outside this project.
+
+PDF agreements and UTF-8 CSV samples are limited to 2 MiB. Files use opaque local
+storage identifiers; every current or historical download goes through the same
+server-side customer/workspace checks. File validation checks the expected
+extension and sample content signature/encoding; malware scanning is outside the
+demo. Replacement failures remove their newly written file. Revision history
+retains earlier successful submissions and their review reasons.

@@ -195,11 +195,11 @@ keep-alive and forced-stop recovery behavior. Remaining milestones are pending.
 
 ### 2. Review and activation
 
-- [ ] Add revisioned file submissions and authorized downloads.
-- [ ] Allow reviewers to approve or request changes with a visible explanation.
-- [ ] Permit correction and resubmission while retaining earlier revisions.
+- [x] Add revisioned file submissions and authorized downloads.
+- [x] Allow reviewers to approve or request changes with a visible explanation.
+- [x] Permit correction and resubmission while retaining earlier revisions.
 - [ ] Enforce activation rules on the server inside the database transaction.
-- [ ] Record actor-derived activity with each successful business change.
+- [x] Record actor-derived activity with each successful business change.
 
 Done when the correction-to-activation story works and two reviewers cannot
 silently overwrite each other's decisions. Use a version check or equivalent

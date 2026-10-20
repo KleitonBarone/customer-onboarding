@@ -101,7 +101,7 @@ export async function getOnboarding(db: Database, actor: Actor, id: string) {
     .from(s.activity)
     .innerJoin(s.users, eq(s.users.id, s.activity.actorId))
     .where(eq(s.activity.onboardingId, id))
-    .orderBy(desc(s.activity.createdAt));
+    .orderBy(desc(s.activity.position));
   const reviews = await db
     .select({
       id: s.reviews.id,

@@ -33,3 +33,10 @@ before starting the next branch. Do not bypass protections or deploy anything.
 
 The final evidence document will record actual PR URLs, tested commits, merge
 commits, and results. Public hosting is outside this delivery sequence.
+
+## Completed merges
+
+- [PR 1](https://github.com/KleitonBarone/customer-onboarding/pull/1), tested head
+  `d88f6a7`, merged as `b31d5ac`. PR/main CI and merged-main local verification
+  passed. Browser submission, isolation, narrow layout, controlled failure cleanup,
+  graceful shutdown, and forced-stop orphan recovery were checked locally.
