@@ -68,6 +68,16 @@ shutdown through `env:clean` must free all three ports and the WSL keep-alive.
 
 ## Migrations and application boundaries
 
+The API checks reminders at startup and every five seconds, with one worker tick
+at a time and timer cleanup on close. PostgreSQL stores pending outbox rows and a
+unique `(onboarding, kind, UTC day)` key. Workers lock pending rows with
+`SKIP LOCKED`; inbox insertion and delivery acknowledgement share a transaction.
+Restart tests launch two separate Node processes against the same verification DB.
+Per-workspace demo clocks persist in PostgreSQL. Account managers can advance
+their session workspace by exactly 24 hours. Authentication uses wall-clock time.
+The inbox contains the latest 50 accessible messages. This is local delivery;
+external email would need its own provider idempotency and retry policy.
+
 Edit `apps/api/src/schema.ts`, then run `pnpm db:generate`. Commit generated SQL
 and metadata with the behavior change. New environments apply migrations through
 `apps/api/src/prepare.ts`; seeding is idempotent and uses fixed identities.

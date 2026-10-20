@@ -19,17 +19,44 @@ import type { Database } from "./database.js";
 import { downloadFile, uploadFile } from "./files.js";
 import { getOnboarding } from "./queries.js";
 import { listOnboardings } from "./queue.js";
+import { advanceDemoTime, demoTime, listNotifications, runReminders } from "./reminders.js";
 import { reviewRequirement } from "./reviews.js";
 import * as s from "./schema.js";
-import { demoNow } from "./seed.js";
 import { submitContent } from "./submissions.js";
 
 export async function createApp(
   db: Database,
-  options: { demo: boolean; now?: () => Date; logger?: boolean; storageRoot?: string },
+  options: {
+    demo: boolean;
+    now?: () => Date;
+    logger?: boolean;
+    storageRoot?: string;
+    reminders?: boolean;
+  },
 ) {
   const app = Fastify({ logger: options.logger ?? false, bodyLimit: 10_000 });
-  const now = options.now ?? (() => new Date(demoNow));
+  const now = async (workspaceId: string) => options.now?.() ?? demoTime(db, workspaceId);
+  if (options.reminders) {
+    let running: Promise<void> | undefined;
+    const tick = () => {
+      if (!running)
+        running = runReminders(db)
+          .catch((error) => app.log.error(error))
+          .finally(() => {
+            running = undefined;
+          });
+      return running;
+    };
+    app.addHook("onReady", async () => {
+      await tick();
+    });
+    const timer = setInterval(() => void tick(), 5_000);
+    timer.unref();
+    app.addHook("onClose", async () => {
+      clearInterval(timer);
+      await running;
+    });
+  }
   await app.register(cookie);
   await app.register(multipart, {
     limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 0, parts: 1 },
@@ -104,7 +131,7 @@ export async function createApp(
     await db.insert(s.sessions).values({
       tokenHash: hashToken(token),
       membershipId: membership.id,
-      expiresAt: new Date(now().getTime() + 86_400_000).toISOString(),
+      expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
     });
     reply.setCookie("relay_session", token, {
       httpOnly: true,
@@ -114,27 +141,44 @@ export async function createApp(
     });
     return { ok: true };
   });
-  app.get("/api/session", async (request) => actorFor(db, request, now()));
+  app.get("/api/session", async (request) => actorFor(db, request, new Date()));
+  app.get("/api/notifications", async (request) =>
+    listNotifications(db, await actorFor(db, request, new Date())),
+  );
+  app.get("/api/demo/clock", async (request) => {
+    if (!options.demo) throw new ApiError(404, "Demo clock is unavailable.");
+    const actor = await actorFor(db, request, new Date());
+    return { now: (await now(actor.workspaceId)).toISOString() };
+  });
+  app.post("/api/demo/clock/advance", async (request) => {
+    if (!options.demo) throw new ApiError(404, "Demo clock is unavailable.");
+    const actor = await actorFor(db, request, new Date());
+    if (actor.role !== "manager")
+      throw new ApiError(403, "Only account managers can advance the demo clock.");
+    const input = type({ "+": "reject" })(request.body);
+    if (input instanceof type.errors) throw new ApiError(400, input.summary);
+    return advanceDemoTime(db, actor.workspaceId);
+  });
   app.get<{ Querystring: Record<string, string | undefined> }>(
     "/api/onboardings",
     async (request) => {
-      const actor = await actorFor(db, request, now());
+      const actor = await actorFor(db, request, new Date());
       const input = queueInput({
         ...request.query,
         limit: Number(request.query.limit ?? 20),
         offset: Number(request.query.offset ?? 0),
       });
       if (input instanceof type.errors) throw new ApiError(400, input.summary);
-      return listOnboardings(db, actor, input, now());
+      return listOnboardings(db, actor, input, await now(actor.workspaceId));
     },
   );
   app.get<{ Params: { id: string } }>("/api/onboardings/:id", async (request) =>
-    getOnboarding(db, await actorFor(db, request, now()), request.params.id),
+    getOnboarding(db, await actorFor(db, request, new Date()), request.params.id),
   );
   app.post<{ Params: { id: string; requirementId: string } }>(
     "/api/onboardings/:id/requirements/:requirementId/submissions",
     async (request) => {
-      const actor = await actorFor(db, request, now());
+      const actor = await actorFor(db, request, new Date());
       const input = submissionInput(request.body);
       if (input instanceof type.errors) throw new ApiError(400, input.summary);
       const content =
@@ -152,14 +196,14 @@ export async function createApp(
         request.params.id,
         request.params.requirementId,
         { content, version: input.version, kind: input.kind },
-        now(),
+        await now(actor.workspaceId),
       );
     },
   );
   app.post<{ Params: { id: string; requirementId: string }; Querystring: { version?: string } }>(
     "/api/onboardings/:id/requirements/:requirementId/files",
     async (request) => {
-      const actor = await actorFor(db, request, now());
+      const actor = await actorFor(db, request, new Date());
       await onboardingFor(db, actor, request.params.id);
       if (actor.role !== "customer")
         throw new ApiError(403, "Only the assigned customer can upload a document.");
@@ -177,12 +221,12 @@ export async function createApp(
         version,
         file,
         options.storageRoot,
-        now(),
+        await now(actor.workspaceId),
       );
     },
   );
   app.get<{ Params: { id: string } }>("/api/revisions/:id/file", async (request, reply) => {
-    const actor = await actorFor(db, request, now());
+    const actor = await actorFor(db, request, new Date());
     if (!options.storageRoot) throw new ApiError(503, "Local file storage is unavailable.");
     const file = await downloadFile(db, actor, request.params.id, options.storageRoot);
     return reply
@@ -198,7 +242,7 @@ export async function createApp(
   app.post<{ Params: { id: string; requirementId: string } }>(
     "/api/onboardings/:id/requirements/:requirementId/reviews",
     async (request) => {
-      const actor = await actorFor(db, request, now());
+      const actor = await actorFor(db, request, new Date());
       const input = reviewInput(request.body);
       if (input instanceof type.errors) throw new ApiError(400, input.summary);
       return reviewRequirement(
@@ -207,18 +251,25 @@ export async function createApp(
         request.params.id,
         request.params.requirementId,
         input,
-        now(),
+        await now(actor.workspaceId),
       );
     },
   );
   app.post<{ Params: { id: string } }>("/api/onboardings/:id/activate", async (request) => {
-    const actor = await actorFor(db, request, now());
+    const actor = await actorFor(db, request, new Date());
     const input = activateInput(request.body);
     if (input instanceof type.errors) throw new ApiError(400, input.summary);
-    return changeActivation(db, actor, request.params.id, input.version, "activate", now());
+    return changeActivation(
+      db,
+      actor,
+      request.params.id,
+      input.version,
+      "activate",
+      await now(actor.workspaceId),
+    );
   });
   app.post<{ Params: { id: string } }>("/api/onboardings/:id/reopen", async (request) => {
-    const actor = await actorFor(db, request, now());
+    const actor = await actorFor(db, request, new Date());
     const input = reopenInput(request.body);
     if (input instanceof type.errors) throw new ApiError(400, input.summary);
     return changeActivation(
@@ -227,7 +278,7 @@ export async function createApp(
       request.params.id,
       input.version,
       "reopen",
-      now(),
+      await now(actor.workspaceId),
       input.reason,
     );
   });

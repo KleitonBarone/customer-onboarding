@@ -9,6 +9,7 @@ if (process.env.APP_ENV !== "demo")
 const app = await createApp(db, {
   demo: true,
   logger: true,
+  reminders: true,
   storageRoot: process.env.STORAGE_ROOT,
 });
 app.addHook("onClose", async () => client.end());

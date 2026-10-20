@@ -79,6 +79,13 @@ export async function seedDatabase(db: Pick<Database, "transaction">, storageRoo
         personaSeeds.map(({ id, workspaceId, role }) => ({ id, userId: id, workspaceId, role })),
       )
       .onConflictDoNothing();
+    await tx
+      .insert(s.demoClocks)
+      .values([
+        { workspaceId: "northstar", now: demoNow },
+        { workspaceId: "elsewhere", now: demoNow },
+      ])
+      .onConflictDoNothing();
     const accounts = scenarioAccounts;
     for (const config of accounts) {
       const account = {

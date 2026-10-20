@@ -11,7 +11,8 @@ The current app includes customer submissions, private document downloads,
 reviewer approvals/correction requests, revision history, server-side demo
 sessions, workspace/customer access checks, and transactional activation/reopening.
 The employee queue includes status, owner, age, next action, and bounded filters.
-Reminders and the recorded walkthrough are the next stages.
+The local inbox demonstrates durable reminders without an email service.
+The recorded walkthrough is the next stage.
 See the [implementation plan](PLAN.md) for current progress.
 
 ## Try the local demo
@@ -53,6 +54,14 @@ recreates only that disposable stack. The reset command becomes the new foregrou
 session; choose a persona again after it reports ready.
 
 ## Verify and stop
+
+Juniper initially receives one reminder to correct its agreement. In the inbox,
+Ada can advance Northstar's demo date by 24 hours to create the next day's reminder.
+The processor checks every five seconds and persists pending work across API
+restarts. Replays produce one message per onboarding and UTC day. Draft, ready,
+active, and reviewer-only waiting records do not receive customer reminders.
+Maya sees Juniper's inbox; Owen and the other provider cannot read it. Workspace
+demo dates are independent and do not change real session expiry.
 
 ```sh
 pnpm verify

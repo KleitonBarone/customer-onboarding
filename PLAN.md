@@ -216,7 +216,7 @@ invalidation. Earlier successful revisions and reviews remain available.
 
 - [x] Add the work queue with status, account owner, age, and next required action.
 - [x] Add bounded filtering, useful empty states, and clear permission messages.
-- [ ] Add the local notification inbox and durable reminder deduplication.
+- [x] Add the local notification inbox and durable reminder deduplication.
 - [x] Seed the remaining scenarios and add a scoped reset path.
 
 Done when a user can identify and resolve a blocked onboarding without consulting
@@ -226,7 +226,7 @@ the database, and replaying a reminder run does not create duplicate messages.
 
 - [ ] Test workspace and customer isolation, including file download routes.
 - [ ] Test activation gates, revision invalidation, and concurrent review conflicts.
-- [ ] Test notification restart behavior and reminder deduplication.
+- [x] Test notification restart behavior and reminder deduplication.
 - [ ] Add two browser journeys: a correction through activation, and denied access.
 - [ ] Run built-app browser journeys on disposable services with failure diagnostics.
 - [ ] Check keyboard use, form labels, narrow layouts, and meaningful error states.
