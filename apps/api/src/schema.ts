@@ -138,3 +138,31 @@ export const sessions = pgTable("sessions", {
     .references(() => memberships.id),
   expiresAt: timestamp("expires_at", { withTimezone: true, mode: "string" }).notNull(),
 });
+
+export const demoClocks = pgTable("demo_clocks", {
+  workspaceId: text("workspace_id")
+    .primaryKey()
+    .references(() => workspaces.id),
+  now: timestamp("now", { withTimezone: true, mode: "string" }).notNull(),
+});
+export const notificationOutbox = pgTable(
+  "notification_outbox",
+  {
+    id: text("id").primaryKey(),
+    onboardingId: text("onboarding_id")
+      .notNull()
+      .references(() => onboardings.id),
+    kind: text("kind").notNull(),
+    window: text("window").notNull(),
+    message: text("message").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).notNull(),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true, mode: "string" }),
+  },
+  (table) => [unique().on(table.onboardingId, table.kind, table.window)],
+);
+export const notificationInbox = pgTable("notification_inbox", {
+  outboxId: text("outbox_id")
+    .primaryKey()
+    .references(() => notificationOutbox.id),
+  deliveredAt: timestamp("delivered_at", { withTimezone: true, mode: "string" }).notNull(),
+});
