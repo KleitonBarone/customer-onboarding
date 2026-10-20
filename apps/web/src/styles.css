@@ -102,6 +102,20 @@ a {
   display: flex;
   min-height: 100vh;
 }
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  transform: translateY(-150%);
+  background: #fff;
+  color: #183b56;
+  padding: 10px 16px;
+  border-radius: 6px;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
 .sidebar {
   width: 238px;
   flex-shrink: 0;

@@ -122,9 +122,21 @@ export function RequirementCard({
         )}
       </div>
       {submission.error && (
-        <p className="error" role="alert">
-          {submission.error.message}
-        </p>
+        <div>
+          <p className="error" role="alert">
+            {submission.error.message}
+          </p>
+          <button
+            type="button"
+            className="text-button"
+            onClick={async () => {
+              await refresh();
+              submission.reset();
+            }}
+          >
+            Refresh requirement
+          </button>
+        </div>
       )}
       {editing && (
         <form
@@ -234,9 +246,21 @@ export function RequirementCard({
               placeholder="Explain any changes the customer needs to make."
             />
             {review.error && (
-              <p className="error" role="alert">
-                {review.error.message}
-              </p>
+              <div>
+                <p className="error" role="alert">
+                  {review.error.message}
+                </p>
+                <button
+                  type="button"
+                  className="text-button"
+                  onClick={async () => {
+                    await refresh();
+                    review.reset();
+                  }}
+                >
+                  Refresh requirement
+                </button>
+              </div>
             )}
             <div className="form-actions">
               <button

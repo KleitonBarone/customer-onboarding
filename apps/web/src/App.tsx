@@ -78,6 +78,9 @@ export function App() {
   });
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
       <aside className="sidebar">
         <a
           className="brand"
@@ -110,6 +113,7 @@ export function App() {
             Demo persona
             <select
               id="persona"
+              aria-label="Demo persona"
               value={actor?.membershipId ?? ""}
               disabled={login.isPending}
               onChange={(event) => {
@@ -125,7 +129,7 @@ export function App() {
             </select>
           </label>
         </header>
-        <main id="main-content">
+        <main id="main-content" tabIndex={-1}>
           {(login.error || session.error || personas.error) && (
             <p role="alert" className="error">
               {(login.error ?? session.error ?? personas.error)?.message}

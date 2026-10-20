@@ -19,7 +19,10 @@ async function openJuniper(page: Page) {
   await expect(page.getByRole("heading", { name: "Juniper Retail", exact: true })).toBeVisible();
 }
 async function upload(page: Page) {
-  await agreement(page).getByRole("button", { name: "Replace document" }).click();
+  await agreement(page).getByRole("button", { name: "Replace document" }).focus();
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Tab");
+  await expect(agreement(page).getByLabel(/PDF agreement/)).toBeFocused();
   await agreement(page)
     .getByLabel(/PDF agreement/)
     .setInputFiles("fixtures/service-agreement.pdf");
@@ -31,7 +34,30 @@ test("unrelated customers and workspaces cannot read details or private files", 
   page,
 }) => {
   await page.goto("/");
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("main")).toBeFocused();
+  await page.route("**/api/onboardings?**", (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ message: "Queue temporarily unavailable." }),
+    }),
+  );
   await persona(page, "ada");
+  await expect(page.getByRole("alert")).toContainText("Queue temporarily unavailable.", {
+    timeout: 12000,
+  });
+  await page.unroute("**/api/onboardings?**");
+  await page.getByRole("button", { name: "Retry", exact: true }).click();
+  await expect(page.getByRole("button", { name: /Juniper Retail/ })).toBeVisible();
+  await page.getByLabel("Status", { exact: true }).selectOption("ready");
+  await expect(page.getByRole("button", { name: /Cedar & Co/ })).toBeVisible();
+  await page.getByLabel("Status", { exact: true }).selectOption("");
+  await page.getByLabel("Account manager", { exact: true }).selectOption("oliver");
+  await expect(page.getByRole("button", { name: /Juniper Retail/ })).toHaveCount(0);
+  await page.getByLabel("Account manager", { exact: true }).selectOption("");
   await openJuniper(page);
   await persona(page, "owen");
   await expect(page.getByRole("heading", { name: "Beacon Supply", exact: true })).toBeVisible();
