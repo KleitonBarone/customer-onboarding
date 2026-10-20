@@ -7,6 +7,24 @@
   font-synthesis: none;
   line-height: 1.55;
 }
+form {
+  margin-top: 22px;
+}
+form label {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+textarea,
+input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #bdccda;
+  border-radius: 6px;
+  background: #fff;
+  color: #233c50;
+  resize: vertical;
+}
 * {
   box-sizing: border-box;
 }
@@ -199,7 +217,7 @@ h3 {
 .queue-heading,
 .queue-row {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr;
+  grid-template-columns: minmax(0, 1.4fr) 120px 125px 50px minmax(0, 1.4fr);
   gap: 16px;
   text-align: left;
   align-items: center;
@@ -236,6 +254,57 @@ small {
 }
 .owner {
   font-size: 13px;
+}
+.age,
+.next-action {
+  font-size: 12px;
+}
+.queue-filters {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 20px;
+}
+.queue-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+}
+.queue-filters label:first-child {
+  flex: 1;
+  min-width: 180px;
+}
+.queue-filters select {
+  min-height: 43px;
+}
+.queue-filters input {
+  min-height: 43px;
+}
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+.mobile-age {
+  display: none;
+}
+@media (max-width: 1200px) {
+  .queue-heading,
+  .queue-row {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.2fr);
+  }
+  .queue-heading > .owner,
+  .queue-row > .owner,
+  .queue-heading > .age,
+  .queue-row > .age {
+    display: none;
+  }
 }
 .status {
   display: inline-block;
@@ -351,24 +420,6 @@ small {
 .small {
   font-size: 12px;
   padding: 6px 12px;
-}
-form {
-  margin-top: 22px;
-}
-form label {
-  display: block;
-  font-size: 13px;
-  margin-bottom: 8px;
-}
-textarea,
-input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #bdccda;
-  border-radius: 6px;
-  background: #fff;
-  color: #233c50;
-  resize: vertical;
 }
 .form-actions {
   display: flex;
@@ -590,6 +641,15 @@ input {
   }
 }
 @media (max-width: 700px) {
+  .queue-row > .next-action {
+    grid-column: 1 / -1;
+  }
+  .queue-heading > .next-action {
+    display: none;
+  }
+  .mobile-age {
+    display: inline;
+  }
   .review-panel,
   .correction-note,
   .revision-history {

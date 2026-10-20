@@ -3,6 +3,7 @@ import {
   detailSchema,
   onboardingsSchema,
   personasSchema,
+  type queueInput,
 } from "../../../packages/contracts/src/index.js";
 
 export async function request(path: string, init?: RequestInit): Promise<unknown> {
@@ -36,8 +37,12 @@ export const api = {
     if (!response.ok) throw new Error("Cannot load your session. Reload to try again.");
     return actorSchema.assert(await response.json());
   },
-  onboardings: async (signal?: AbortSignal) =>
-    onboardingsSchema.assert(await request("/onboardings", { signal })),
+  onboardings: async (query: typeof queueInput.infer, signal?: AbortSignal) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query))
+      if (value !== undefined) params.set(key, String(value));
+    return onboardingsSchema.assert(await request(`/onboardings?${params}`, { signal }));
+  },
   detail: async (id: string, signal?: AbortSignal) =>
     detailSchema.assert(await request(`/onboardings/${encodeURIComponent(id)}`, { signal })),
 };
