@@ -18,6 +18,15 @@ export const personaSchema = type({
   workspaceName: "string",
 });
 export const personasSchema = personaSchema.array();
+export const clockSchema = type({ now: "string" });
+export const notificationsSchema = type({
+  id: "string",
+  onboardingId: "string",
+  company: "string",
+  message: "string",
+  window: "string",
+  createdAt: "string",
+}).array();
 export const requirementSchema = type({
   id: "string",
   kind: "'company' | 'agreement' | 'import' | 'contact'",

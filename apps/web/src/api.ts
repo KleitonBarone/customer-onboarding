@@ -1,6 +1,8 @@
 import {
   actorSchema,
+  clockSchema,
   detailSchema,
+  notificationsSchema,
   onboardingsSchema,
   personasSchema,
   type queueInput,
@@ -29,6 +31,10 @@ export async function request(path: string, init?: RequestInit): Promise<unknown
 }
 
 export const api = {
+  clock: async (signal?: AbortSignal) =>
+    clockSchema.assert(await request("/demo/clock", { signal })),
+  notifications: async (signal?: AbortSignal) =>
+    notificationsSchema.assert(await request("/notifications", { signal })),
   personas: async (signal?: AbortSignal) =>
     personasSchema.assert(await request("/demo/personas", { signal })),
   session: async (signal?: AbortSignal) => {

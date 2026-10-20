@@ -7,6 +7,7 @@ import {
 } from "../../../packages/contracts/src/index.js";
 import { ActivationPanel } from "./ActivationPanel.js";
 import { api, request } from "./api.js";
+import { Notifications } from "./Notifications.js";
 import { Queue } from "./Queue.js";
 import { RequirementCard } from "./RequirementCard.js";
 
@@ -209,6 +210,7 @@ export function App() {
               />
             </>
           )}
+          {actor && <Notifications key={actor.membershipId} actor={actor} />}
         </main>
       </div>
     </div>
