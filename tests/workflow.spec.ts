@@ -3,7 +3,15 @@ import { expect, type Page, test } from "@playwright/test";
 import { actorSchema, detailSchema } from "../packages/contracts/src/index.js";
 
 async function persona(page: Page, id: string) {
+  const switched = page.waitForResponse(
+    (response) =>
+      response.url().endsWith("/api/demo/session") && response.request().method() === "POST",
+  );
   await page.getByLabel("Demo persona").selectOption(id);
+  const response = await switched;
+  expect(response.status()).toBe(200);
+  await response.finished();
+  await expect(page.getByLabel("Demo persona")).toBeEnabled();
   await expect
     .poll(async () => {
       const response = await page.request.get("/api/session");

@@ -77,8 +77,10 @@ documentation and the browser-cache fix. The final PR and merged main run the co
 | [6 — Browser/CI](https://github.com/KleitonBarone/customer-onboarding/pull/6) | `9d1e5fd` | `b716baa` |
 | [7 — Handoff](https://github.com/KleitonBarone/customer-onboarding/pull/7) | See GitHub's checked head | See GitHub's merge record |
 
-Each planned branch has three focused commits; handoff adds the observed browser
-cache fix as a fourth commit. The actual GitHub PR record holds
+Each planned branch has three focused commits; handoff adds focused fixes for the
+observed browser-cache override and repeated-persona test timing. The latter waits
+for session replacement to finish before asserting access, so the old session
+cannot satisfy the helper during login. The actual GitHub PR record holds
 its full head/merge SHA and checks; the final PR cannot embed its own eventual
 merge SHA. [Delivery](DELIVERY.md) describes the sequence.
 

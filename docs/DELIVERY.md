@@ -44,7 +44,9 @@ commits, and results. Public hosting is outside this delivery sequence.
   handoff with setup rehearsal, media, case study and measured evidence. Its
   GitHub record is authoritative for its checked head and eventual merge SHA.
   The clean checkout exposed a browser-cache override bug, fixed in the additional
-  focused commit `d59baf1`. See [evidence](EVIDENCE.md) for results and limits.
+  focused commit `d59baf1`. Final verification also exposed repeated-persona
+  timing in the browser helper; assertions now await the session replacement.
+  See [evidence](EVIDENCE.md) for results and limits.
 
 - [PR 5](https://github.com/KleitonBarone/customer-onboarding/pull/5), tested head
   `9d335ef`, merged as `619c2f2`. PR/main CI and merged-main local verification
