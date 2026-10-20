@@ -40,3 +40,7 @@ commits, and results. Public hosting is outside this delivery sequence.
   `d88f6a7`, merged as `b31d5ac`. PR/main CI and merged-main local verification
   passed. Browser submission, isolation, narrow layout, controlled failure cleanup,
   graceful shutdown, and forced-stop orphan recovery were checked locally.
+- [PR 2](https://github.com/KleitonBarone/customer-onboarding/pull/2), tested head
+  `39e8c68`, merged as `f0e19c0`. PR/main CI and merged-main local verification
+  passed. Nine PostgreSQL/API tests and browser upload/correction/download/isolation
+  checks passed; development and verification resources were removed.

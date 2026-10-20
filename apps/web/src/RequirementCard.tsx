@@ -1,6 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import type { Actor, OnboardingDetail } from "../../../packages/contracts/src/index.js";
+import {
+  type Actor,
+  type OnboardingDetail,
+  submissionInput,
+} from "../../../packages/contracts/src/index.js";
 import { request } from "./api.js";
 
 const states = {
@@ -46,10 +50,23 @@ export function RequirementCard({
       }
       return request(`${base}/submissions`, {
         method: "POST",
-        body: JSON.stringify({
-          content: String(form.get("content") ?? ""),
-          version: requirement.version,
-        }),
+        body: JSON.stringify(
+          submissionInput.assert(
+            requirement.kind === "company"
+              ? {
+                  kind: "company",
+                  legalName: String(form.get("legalName") ?? ""),
+                  registeredAddress: String(form.get("registeredAddress") ?? ""),
+                  version: requirement.version,
+                }
+              : {
+                  kind: "contact",
+                  name: String(form.get("name") ?? ""),
+                  email: String(form.get("email") ?? ""),
+                  version: requirement.version,
+                },
+          ),
+        ),
       });
     },
     onSuccess: async () => {
@@ -130,20 +147,44 @@ export function RequirementCard({
                 required
               />
             </>
+          ) : requirement.kind === "company" ? (
+            <>
+              <label htmlFor={`legalName-${requirement.id}`}>Legal company name</label>
+              <input
+                id={`legalName-${requirement.id}`}
+                name="legalName"
+                required
+                maxLength={200}
+                defaultValue={revision?.content.split("\n")[0]}
+              />
+              <label htmlFor={`address-${requirement.id}`}>Registered address</label>
+              <textarea
+                id={`address-${requirement.id}`}
+                name="registeredAddress"
+                required
+                maxLength={500}
+                defaultValue={revision?.content.split("\n").slice(1).join("\n")}
+                rows={3}
+              />
+            </>
           ) : (
             <>
-              <label htmlFor={`content-${requirement.id}`}>
-                {requirement.kind === "company"
-                  ? "Legal company name and registered address"
-                  : "Launch contact name and email"}
-              </label>
-              <textarea
-                id={`content-${requirement.id}`}
-                name="content"
+              <label htmlFor={`name-${requirement.id}`}>Launch contact name</label>
+              <input
+                id={`name-${requirement.id}`}
+                name="name"
                 required
-                maxLength={5000}
-                defaultValue={revision?.content}
-                rows={4}
+                maxLength={100}
+                defaultValue={revision?.content.split("\n")[0]}
+              />
+              <label htmlFor={`email-${requirement.id}`}>Launch contact email</label>
+              <input
+                id={`email-${requirement.id}`}
+                name="email"
+                type="email"
+                required
+                maxLength={254}
+                defaultValue={revision?.content.split("\n")[1]}
               />
             </>
           )}

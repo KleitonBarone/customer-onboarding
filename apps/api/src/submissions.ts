@@ -10,7 +10,7 @@ export async function submitContent(
   actor: Actor,
   onboardingId: string,
   requirementId: string,
-  input: typeof submissionInput.infer,
+  input: { content: string; version: number; kind?: typeof submissionInput.infer.kind },
   now: Date,
   file?: { storageId: string; fileName: string; mediaType: string; size: number },
 ) {
@@ -38,6 +38,8 @@ export async function submitContent(
         and(eq(s.requirements.id, requirementId), eq(s.requirements.onboardingId, onboardingId)),
       );
     if (!requirement) throw new ApiError(404, "Requirement not found.");
+    if (input.kind && input.kind !== requirement.kind)
+      throw new ApiError(400, "The details do not match this requirement.");
     if (!file && requirement.kind !== "company" && requirement.kind !== "contact")
       throw new ApiError(400, "This requirement needs a document upload.");
     if (file && requirement.kind !== "agreement" && requirement.kind !== "import")

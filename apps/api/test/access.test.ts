@@ -120,7 +120,12 @@ test("the persona picker is unavailable outside explicit demo mode", async () =>
 test("a customer submission is visible to employees, audited, and scoped on writes", async () => {
   const cookie = await session("maya");
   const url = "/api/onboardings/juniper/requirements/juniper-company/submissions";
-  const payload = { content: "Juniper Retail Ltd, 145 Orchard Avenue", version: 0 };
+  const payload = {
+    kind: "company",
+    legalName: "Juniper Retail Ltd",
+    registeredAddress: "145 Orchard Avenue",
+    version: 0,
+  };
   assert.equal(
     (
       await app.inject({
