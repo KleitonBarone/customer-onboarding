@@ -19,7 +19,9 @@ const child = spawn(
     windowsHide: true,
     env: {
       ...process.env,
-      PLAYWRIGHT_BROWSERS_PATH: fileURLToPath(new URL("../.local/browsers", import.meta.url)),
+      PLAYWRIGHT_BROWSERS_PATH:
+        process.env.PLAYWRIGHT_BROWSERS_PATH ??
+        fileURLToPath(new URL("../.local/browsers", import.meta.url)),
     },
   },
 );

@@ -345,7 +345,8 @@ async function run(mode: "dev" | "verify", preferred?: Manifest["ports"]) {
     STORAGE_ROOT: path.join(directory, "uploads"),
     BASE_URL: `http://127.0.0.1:${manifest.ports.ui}`,
     DEMO_RUN_ID: id,
-    PLAYWRIGHT_BROWSERS_PATH: path.join(root, ".local", "browsers"),
+    PLAYWRIGHT_BROWSERS_PATH:
+      process.env.PLAYWRIGHT_BROWSERS_PATH ?? path.join(root, ".local", "browsers"),
   };
   let interrupted = false;
   let failed = false;
