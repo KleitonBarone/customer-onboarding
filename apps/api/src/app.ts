@@ -5,6 +5,7 @@ import { type } from "arktype";
 import { eq } from "drizzle-orm";
 import Fastify from "fastify";
 import {
+  reviewInput,
   sessionInput,
   submissionInput,
   versionInput,
@@ -13,6 +14,7 @@ import { ApiError, actorFor, hashToken, onboardingFor } from "./access.js";
 import type { Database } from "./database.js";
 import { downloadFile, uploadFile } from "./files.js";
 import { getOnboarding, listOnboardings } from "./queries.js";
+import { reviewRequirement } from "./reviews.js";
 import * as s from "./schema.js";
 import { demoNow } from "./seed.js";
 import { submitContent } from "./submissions.js";
@@ -168,5 +170,21 @@ export async function createApp(
       .type(file.mediaType)
       .send(file.bytes);
   });
+  app.post<{ Params: { id: string; requirementId: string } }>(
+    "/api/onboardings/:id/requirements/:requirementId/reviews",
+    async (request) => {
+      const actor = await actorFor(db, request, now());
+      const input = reviewInput(request.body);
+      if (input instanceof type.errors) throw new ApiError(400, input.summary);
+      return reviewRequirement(
+        db,
+        actor,
+        request.params.id,
+        request.params.requirementId,
+        input,
+        now(),
+      );
+    },
+  );
   return app;
 }

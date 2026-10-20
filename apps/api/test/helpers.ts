@@ -1,8 +1,28 @@
 import assert from "node:assert/strict";
 import { detailSchema } from "../../../packages/contracts/src/index.js";
 import type { createApp } from "../src/app.js";
+import type { Database } from "../src/database.js";
+import * as s from "../src/schema.js";
+import { demoNow, requirementSeeds } from "../src/seed.js";
 
 export type TestApp = Awaited<ReturnType<typeof createApp>>;
+
+export async function fixtureOnboarding(db: Database, id: string) {
+  await db
+    .insert(s.customerAccounts)
+    .values({ id, name: `Fixture ${id}`, workspaceId: "northstar", ownerId: "ada" });
+  await db
+    .insert(s.customerMemberships)
+    .values({ id: `${id}-maya`, customerId: id, membershipId: "maya" });
+  await db.insert(s.onboardings).values({ id, customerId: id, createdAt: demoNow });
+  await db.insert(s.requirements).values(
+    requirementSeeds.map((requirement) => ({
+      ...requirement,
+      id: `${id}-${requirement.kind}`,
+      onboardingId: id,
+    })),
+  );
+}
 
 export async function login(app: TestApp, membershipId: string) {
   const response = await app.inject({

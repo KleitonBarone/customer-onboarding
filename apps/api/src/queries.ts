@@ -102,6 +102,21 @@ export async function getOnboarding(db: Database, actor: Actor, id: string) {
     .innerJoin(s.users, eq(s.users.id, s.activity.actorId))
     .where(eq(s.activity.onboardingId, id))
     .orderBy(desc(s.activity.createdAt));
+  const reviews = await db
+    .select({
+      id: s.reviews.id,
+      revisionId: s.reviews.revisionId,
+      actor: s.users.name,
+      decision: s.reviews.decision,
+      reason: s.reviews.reason,
+      createdAt: s.reviews.createdAt,
+    })
+    .from(s.reviews)
+    .innerJoin(s.revisions, eq(s.revisions.id, s.reviews.revisionId))
+    .innerJoin(s.requirements, eq(s.requirements.id, s.revisions.requirementId))
+    .innerJoin(s.users, eq(s.users.id, s.reviews.actorId))
+    .where(eq(s.requirements.onboardingId, id))
+    .orderBy(desc(s.reviews.createdAt));
   return {
     onboarding: {
       ...onboarding,
@@ -111,6 +126,7 @@ export async function getOnboarding(db: Database, actor: Actor, id: string) {
     },
     requirements,
     revisions,
+    reviews,
     activity,
   };
 }

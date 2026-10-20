@@ -55,10 +55,26 @@ export const activitySchema = type({
   message: "string",
   createdAt: "string",
 });
+export const reviewSchema = type({
+  id: "string",
+  revisionId: "string",
+  actor: "string",
+  decision: "'approved' | 'changes_requested'",
+  reason: "string",
+  createdAt: "string",
+});
+export const reviewInput = type({
+  revisionId: "string > 0",
+  version: "number.integer >= 0",
+  decision: "'approved' | 'changes_requested'",
+  reason: "string <= 1000",
+  "+": "reject",
+});
 export const detailSchema = type({
   onboarding: onboardingSchema,
   requirements: requirementSchema.array(),
   revisions: revisionSchema.array(),
+  reviews: reviewSchema.array(),
   activity: activitySchema.array(),
 });
 export type OnboardingDetail = typeof detailSchema.infer;

@@ -105,6 +105,20 @@ export const revisions = pgTable("revisions", {
     .references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).notNull(),
 });
+export const reviewDecision = pgEnum("review_decision", ["approved", "changes_requested"]);
+export const reviews = pgTable("reviews", {
+  id: text("id").primaryKey(),
+  revisionId: text("revision_id")
+    .notNull()
+    .unique()
+    .references(() => revisions.id),
+  actorId: text("actor_id")
+    .notNull()
+    .references(() => users.id),
+  decision: reviewDecision("decision").notNull(),
+  reason: text("reason").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).notNull(),
+});
 export const activity = pgTable("activity", {
   id: text("id").primaryKey(),
   onboardingId: text("onboarding_id")
