@@ -1,11 +1,17 @@
 import { randomBytes } from "node:crypto";
 import cookie from "@fastify/cookie";
+import multipart from "@fastify/multipart";
 import { type } from "arktype";
 import { eq } from "drizzle-orm";
 import Fastify from "fastify";
-import { sessionInput, submissionInput } from "../../../packages/contracts/src/index.js";
-import { ApiError, actorFor, hashToken } from "./access.js";
+import {
+  sessionInput,
+  submissionInput,
+  versionInput,
+} from "../../../packages/contracts/src/index.js";
+import { ApiError, actorFor, hashToken, onboardingFor } from "./access.js";
 import type { Database } from "./database.js";
+import { downloadFile, uploadFile } from "./files.js";
 import { getOnboarding, listOnboardings } from "./queries.js";
 import * as s from "./schema.js";
 import { demoNow } from "./seed.js";
@@ -13,13 +19,25 @@ import { submitContent } from "./submissions.js";
 
 export async function createApp(
   db: Database,
-  options: { demo: boolean; now?: () => Date; logger?: boolean },
+  options: { demo: boolean; now?: () => Date; logger?: boolean; storageRoot?: string },
 ) {
   const app = Fastify({ logger: options.logger ?? false, bodyLimit: 10_000 });
   const now = options.now ?? (() => new Date(demoNow));
   await app.register(cookie);
+  await app.register(multipart, {
+    limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 0, parts: 1 },
+  });
   app.setErrorHandler((error, _request, reply) => {
-    const status = error instanceof ApiError ? error.statusCode : 500;
+    const status =
+      error instanceof ApiError
+        ? error.statusCode
+        : error instanceof Error &&
+            "statusCode" in error &&
+            typeof error.statusCode === "number" &&
+            error.statusCode >= 400 &&
+            error.statusCode < 500
+          ? error.statusCode
+          : 500;
     if (status === 500) app.log.error(error);
     return reply.code(status).send({
       message:
@@ -111,5 +129,44 @@ export async function createApp(
       );
     },
   );
+  app.post<{ Params: { id: string; requirementId: string }; Querystring: { version?: string } }>(
+    "/api/onboardings/:id/requirements/:requirementId/files",
+    async (request) => {
+      const actor = await actorFor(db, request, now());
+      await onboardingFor(db, actor, request.params.id);
+      if (actor.role !== "customer")
+        throw new ApiError(403, "Only the assigned customer can upload a document.");
+      const version = versionInput(Number(request.query.version));
+      if (version instanceof type.errors)
+        throw new ApiError(400, "A current requirement version is required.");
+      if (!options.storageRoot) throw new ApiError(503, "Local file storage is unavailable.");
+      const file = await request.file();
+      if (!file) throw new ApiError(400, "Choose a document to upload.");
+      return uploadFile(
+        db,
+        actor,
+        request.params.id,
+        request.params.requirementId,
+        version,
+        file,
+        options.storageRoot,
+        now(),
+      );
+    },
+  );
+  app.get<{ Params: { id: string } }>("/api/revisions/:id/file", async (request, reply) => {
+    const actor = await actorFor(db, request, now());
+    if (!options.storageRoot) throw new ApiError(503, "Local file storage is unavailable.");
+    const file = await downloadFile(db, actor, request.params.id, options.storageRoot);
+    return reply
+      .header(
+        "Content-Disposition",
+        `attachment; filename*=UTF-8''${encodeURIComponent(file.fileName)}`,
+      )
+      .header("X-Content-Type-Options", "nosniff")
+      .header("Cache-Control", "no-store")
+      .type(file.mediaType)
+      .send(file.bytes);
+  });
   return app;
 }

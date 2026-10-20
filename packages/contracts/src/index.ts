@@ -42,6 +42,10 @@ export const revisionSchema = type({
   id: "string",
   requirementId: "string",
   content: "string",
+  number: "number",
+  fileName: "string | null",
+  mediaType: "string | null",
+  size: "number | null",
   actor: "string",
   createdAt: "string",
 });
@@ -59,6 +63,7 @@ export const detailSchema = type({
 });
 export type OnboardingDetail = typeof detailSchema.infer;
 export const sessionInput = type({ membershipId: "string > 0", "+": "reject" });
+export const versionInput = type("number.integer >= 0");
 export const submissionInput = type({
   content: "0 < string <= 5000",
   version: "number.integer >= 0",

@@ -95,6 +95,11 @@ export const revisions = pgTable("revisions", {
     .notNull()
     .references(() => requirements.id),
   content: text("content").notNull(),
+  number: integer("number").notNull().default(1),
+  storageId: text("storage_id"),
+  fileName: text("file_name"),
+  mediaType: text("media_type"),
+  size: integer("size"),
   actorId: text("actor_id")
     .notNull()
     .references(() => users.id),

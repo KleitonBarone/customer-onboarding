@@ -79,6 +79,10 @@ export async function getOnboarding(db: Database, actor: Actor, id: string) {
       id: s.revisions.id,
       requirementId: s.revisions.requirementId,
       content: s.revisions.content,
+      number: s.revisions.number,
+      fileName: s.revisions.fileName,
+      mediaType: s.revisions.mediaType,
+      size: s.revisions.size,
       actor: s.users.name,
       createdAt: s.revisions.createdAt,
     })

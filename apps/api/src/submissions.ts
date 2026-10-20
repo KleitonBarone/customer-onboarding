@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, sql } from "drizzle-orm";
+import { and, count, eq, sql } from "drizzle-orm";
 import type { Actor, submissionInput } from "../../../packages/contracts/src/index.js";
 import { ApiError, onboardingFor } from "./access.js";
 import type { Database } from "./database.js";
@@ -12,6 +12,7 @@ export async function submitContent(
   requirementId: string,
   input: typeof submissionInput.infer,
   now: Date,
+  file?: { storageId: string; fileName: string; mediaType: string; size: number },
 ) {
   await onboardingFor(db, actor, onboardingId);
   if (actor.role !== "customer")
@@ -37,15 +38,23 @@ export async function submitContent(
         and(eq(s.requirements.id, requirementId), eq(s.requirements.onboardingId, onboardingId)),
       );
     if (!requirement) throw new ApiError(404, "Requirement not found.");
-    if (requirement.kind !== "company" && requirement.kind !== "contact")
+    if (!file && requirement.kind !== "company" && requirement.kind !== "contact")
       throw new ApiError(400, "This requirement needs a document upload.");
+    if (file && requirement.kind !== "agreement" && requirement.kind !== "import")
+      throw new ApiError(400, "This requirement needs written details.");
     if (requirement.version !== input.version)
       throw new ApiError(409, "This requirement changed. Refresh it before submitting again.");
     const id = randomUUID();
+    const [previous] = await tx
+      .select({ total: count() })
+      .from(s.revisions)
+      .where(eq(s.revisions.requirementId, requirementId));
     await tx.insert(s.revisions).values({
       id,
       requirementId,
       content: input.content.trim(),
+      number: (previous?.total ?? 0) + 1,
+      ...file,
       actorId: actor.userId,
       createdAt: now.toISOString(),
     });
