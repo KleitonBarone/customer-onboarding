@@ -198,12 +198,19 @@ keep-alive and forced-stop recovery behavior. Remaining milestones are pending.
 - [x] Add revisioned file submissions and authorized downloads.
 - [x] Allow reviewers to approve or request changes with a visible explanation.
 - [x] Permit correction and resubmission while retaining earlier revisions.
-- [ ] Enforce activation rules on the server inside the database transaction.
+- [x] Enforce activation rules on the server inside the database transaction.
 - [x] Record actor-derived activity with each successful business change.
 
 Done when the correction-to-activation story works and two reviewers cannot
 silently overwrite each other's decisions. Use a version check or equivalent
 explicit concurrency control.
+
+The document review and activation delivery PRs implement this milestone. Four
+mandatory requirements use structured company/contact fields and PDF/CSV uploads.
+Activation/reopening, submissions, and reviews share an onboarding row lock and
+version checks. Fourteen local tests and the full correction-to-activation browser
+journey pass, including active-edit denial, reasoned reopening, and replacement
+invalidation. Earlier successful revisions and reviews remain available.
 
 ### 3. Useful employee workflow
 

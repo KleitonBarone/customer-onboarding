@@ -9,8 +9,8 @@ needs no customer accounts, paid integrations, email service, or public hosting.
 
 The current app includes customer submissions, private document downloads,
 reviewer approvals/correction requests, revision history, server-side demo
-sessions, and workspace/customer access checks. Activation, reminders, and the
-recorded walkthrough are the next delivery stages.
+sessions, workspace/customer access checks, and transactional activation/reopening.
+The employee queue, reminders, and recorded walkthrough are the next stages.
 See the [implementation plan](PLAN.md) for current progress.
 
 ## Try the local demo
@@ -35,6 +35,9 @@ For document review, upload a synthetic PDF agreement as Maya, then choose
 **Noah Ellis** to approve it or request a correction with a reason. Maya sees that
 reason, can upload a replacement, and retains access to earlier file revisions.
 The sample import requirement accepts UTF-8 CSV. Uploads are limited to 2 MiB.
+After Noah approves every mandatory current submission, Ada can activate the
+account. Active accounts reject changes until Ada explicitly reopens onboarding
+with a reason. A replacement then needs fresh review before reactivation.
 
 The persona picker is local demo authentication, not production login. All names,
 documents, companies, and activity are synthetic. Requests derive access from
