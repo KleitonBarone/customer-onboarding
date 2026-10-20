@@ -64,13 +64,14 @@ Maya sees Juniper's inbox; Owen and the other provider cannot read it. Workspace
 demo dates are independent and do not change real session expiry.
 
 ```sh
+pnpm browser:install
 pnpm verify
 pnpm env:clean
 pnpm env:status
 ```
 
 Verification builds the web/API, runs strict type and lint checks plus real
-PostgreSQL tests, checks the built web/API connection, and removes its disposable
+PostgreSQL tests and two built-app Chromium journeys, checks the web/API connection, and removes its disposable
 resources. The test database and ports are separate from an active demo.
 `env:clean` also requests a graceful shutdown of this project's running demo.
 After a forced terminal stop, run it again to recover recorded leftovers.
