@@ -1,0 +1,28 @@
+services:
+  database:
+    image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+    environment:
+      POSTGRES_USER: onboarding
+      POSTGRES_PASSWORD: local-disposable-only
+      POSTGRES_DB: customer_onboarding_demo
+    ports:
+      - "127.0.0.1:${DB_PORT:-55431}:5432"
+    volumes:
+      - database:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U onboarding -d customer_onboarding_demo"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+volumes:
+  database:
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: "${COMPOSE_SUBNET:-10.232.240.0/24}"

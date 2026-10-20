@@ -60,6 +60,94 @@ Reserve UI port 4310, API port 4311, and local database port 55431. Treat these 
 planned defaults until verified during setup. Keep this project's database,
 storage, and reset commands separate from the other portfolio apps.
 
+## Development and test environment
+
+Build the environment in the first delivery PR, before relying on feature tests.
+The agent must be able to start, inspect, exercise, and stop the actual web app,
+API, PostgreSQL, file storage, and reminder processor as those parts are added.
+Use real local services for integration and browser checks. Keep pure rule tests
+small; mocks do not establish that the complete workflow works.
+
+- Pin compatible Node, pnpm, dependency, PostgreSQL image, and browser-tool versions.
+  Commit the lockfile and environment examples. Use the same database version,
+  migrations, fixtures, and checks locally and in CI.
+- Check WSL Ubuntu's Docker endpoint, required tools, available ports, and existing
+  resources before starting anything. Run Docker through WSL. Bind project services
+  to local interfaces and leave existing build/preview channels alone.
+- Separate interactive development from disposable verification. Give each
+  verification run a unique Compose project, database, storage directory, and
+  available ports. Never point tests at the interactive demo database. Record the
+  run's URLs, resource IDs, process IDs with start identity, and owned paths under
+  `.local/runs/<run-id>/`, without credentials.
+- Migrate an empty database and load fixed synthetic fixtures before each run.
+  Use an injectable clock and isolated browser sessions. Reset between independent
+  journeys; retain state within a journey and during intentional restart checks.
+- Wait for database connectivity, API readiness, and the served web app with bounded
+  health checks. Report which dependency failed rather than sleeping for a fixed
+  interval or silently retrying a broken environment.
+- Inspect each delivered slice in the browser from milestone 1 onward. Use the
+  thread's collaborative browser on the URL reported by a running `pnpm dev`
+  session, then stop that session after inspection. Verify visible actions,
+  API results, and persisted state across customer and employee sessions. As
+  features arrive, exercise correction, activation, denied access, authorized file
+  downloads, and reminder/restart behavior. Automate the two primary browser
+  journeys in milestone 4; do not postpone hands-on verification until then.
+- Run final end-to-end checks against built web/API artifacts as well as using
+  development servers during implementation. Capture browser console/request
+  failures, screenshots or traces, and relevant service logs before teardown.
+  Record the tested commit, scenario, command, and actual result.
+
+Provide a small set of root commands. These names are proposed contracts, not
+commands that exist yet:
+
+- `pnpm env:doctor` checks prerequisites, configuration, ports, and resource conflicts.
+- `pnpm dev` starts the project-owned interactive stack, waits for readiness, prints
+  its URLs, and shuts down its owned processes/services on exit or Ctrl+C.
+- `pnpm verify` provisions disposable resources, migrates, seeds, builds, runs the
+  checks available at that milestone, and always tears down. Include real database
+  tests from the first slice and browser journeys once implemented. CI uses the
+  same check sequence with its own disposable services.
+- `pnpm env:status` lists this project's recorded resources and retained artifacts,
+  including anything left after an interrupted run.
+- `pnpm env:clean` safely retries cleanup of recorded disposable resources. It is
+  idempotent, validates ownership, and refuses unrecorded or protected data.
+
+Before PR 1 can merge, run verification twice from fresh state and check cleanup
+after a controlled startup/test failure and an interruption. Later PRs must prove
+their behavior on this environment and leave no unexplained resources behind.
+
+## Cleanup throughout development
+
+Cleanup is part of every run and every PR, not only the portfolio handoff.
+
+1. Before launch, inventory existing resources and record exactly what this run
+   will own. Install `try/finally` cleanup and interruption handling before creating
+   services. Use an explicit Compose project and the same files for every operation.
+2. On success, failure, or cancellation, stop owned web/API process trees, reminder
+   timers, and test browser contexts. Close agent-created preview tabs. Remove
+   disposable containers, networks, database volumes, test uploads, and temporary
+   checkout resources. Never terminate a process merely because it uses a port.
+3. Remove task-created temporary image tags and disposable builders if any were
+   needed. Remove newly pulled images only when no longer needed or used elsewhere.
+   Reuse compatible dependencies during the task; do not download a new browser or
+   duplicate the package store for every run. Preserve pre-existing shared caches.
+4. Resolve filesystem targets and verify they remain within the recorded task-owned
+   directory before deleting. Preserve source, environment files, committed demo
+   media, backups, and intentionally retained application data. Demo reset and
+   environment cleanup must enforce their separate identity/ownership guards.
+5. Replace successful-run reports instead of accumulating copies. Keep only the
+   latest failed run's useful diagnostics unless a particular reproduction is
+   explicitly retained. Bound or rotate service logs. Record retained artifacts
+   and their locations; do not delete committed portfolio evidence.
+6. Check recorded resource IDs, process identities, and ports after teardown.
+   Inspect `docker system df` after image builds or large pulls, without pruning.
+   Report cleanup failures or explicitly retained data/services and why they remain.
+   A run is not fully complete until cleanup succeeds or a retention decision is
+   documented. Do not leave services running unless requested.
+
+Never use global Docker prune commands, shared-cache deletion, WSL shutdown, or
+disk compaction as routine cleanup. Remove only resources created for this work.
+
 ## Local simulation
 
 Seed two fictional providers, several customers, and these scenarios:
@@ -85,14 +173,25 @@ Never infer that an arbitrary connection string is disposable.
 
 ### 1. Foundation and first vertical slice
 
-- [ ] Scaffold the smallest web/API/database structure and initial migrations.
-- [ ] Add workspace and customer membership plus synthetic sessions.
-- [ ] Seed one onboarding and show its checklist in the customer portal.
-- [ ] Let the customer submit one requirement and show it in the employee view.
-- [ ] Record working setup, migration, seed, development, and check commands.
+- [x] Scaffold the smallest web/API/database structure and initial migrations.
+- [x] Add environment diagnostics, isolated verification, and scoped cleanup commands.
+- [x] Add workspace and customer membership plus synthetic sessions.
+- [x] Seed one onboarding and show its checklist in the customer portal.
+- [x] Let the customer submit one requirement and show it in the employee view.
+- [x] Record working setup, migration, seed, development, and check commands.
+- [x] Inspect the first slice in the browser and verify cleanup on failure/interruption.
 
 Done when a fresh local install can show one submission in both views and an
-unrelated customer cannot retrieve it by changing a URL or API identifier.
+unrelated customer cannot retrieve it by changing a URL or API identifier. The
+verification command must reproduce that result with disposable services and
+clean up its resources, including after failure or interruption.
+
+Implemented in the foundation delivery PR. Local evidence includes five real
+PostgreSQL/API tests, two successful fresh verification runs of the submission
+slice, a browser submission/employee/denied-access/persona-switch journey, narrow
+layout inspection, controlled failure cleanup, and orphan recovery after a forced
+terminal stop. See [development details](docs/DEVELOPMENT.md) for the Windows WSL
+keep-alive and forced-stop recovery behavior. Remaining milestones are pending.
 
 ### 2. Review and activation
 
@@ -122,6 +221,7 @@ the database, and replaying a reminder run does not create duplicate messages.
 - [ ] Test activation gates, revision invalidation, and concurrent review conflicts.
 - [ ] Test notification restart behavior and reminder deduplication.
 - [ ] Add two browser journeys: a correction through activation, and denied access.
+- [ ] Run built-app browser journeys on disposable services with failure diagnostics.
 - [ ] Check keyboard use, form labels, narrow layouts, and meaningful error states.
 
 Use real PostgreSQL integration tests for transaction and isolation behavior.
@@ -134,6 +234,7 @@ markup. Capture failures with enough context to reproduce them.
 - [ ] Capture the queue, customer checklist, and review history screens.
 - [ ] Write a short case study about isolation, activation rules, and one tradeoff.
 - [ ] Rehearse setup from a clean checkout and update the README with proven steps.
+- [ ] Rehearse shutdown/cleanup and document any intentionally retained resources.
 - [ ] Record measured local results with the commit, environment, dataset, and limits.
 
 The core demo must remain usable locally. Hosting can be a later, separately
