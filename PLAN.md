@@ -191,7 +191,7 @@ PostgreSQL/API tests, two successful fresh verification runs of the submission
 slice, a browser submission/employee/denied-access/persona-switch journey, narrow
 layout inspection, controlled failure cleanup, and orphan recovery after a forced
 terminal stop. See [development details](docs/DEVELOPMENT.md) for the Windows WSL
-keep-alive and forced-stop recovery behavior. Remaining milestones are pending.
+keep-alive and forced-stop recovery behavior. All five milestones are now implemented.
 
 ### 2. Review and activation
 
@@ -237,12 +237,12 @@ markup. Capture failures with enough context to reproduce them.
 
 ### 5. Portfolio handoff
 
-- [ ] Record an English walkthrough of roughly 90 seconds.
-- [ ] Capture the queue, customer checklist, and review history screens.
-- [ ] Write a short case study about isolation, activation rules, and one tradeoff.
-- [ ] Rehearse setup from a clean checkout and update the README with proven steps.
-- [ ] Rehearse shutdown/cleanup and document any intentionally retained resources.
-- [ ] Record measured local results with the commit, environment, dataset, and limits.
+- [x] Record an English walkthrough of roughly 90 seconds.
+- [x] Capture the queue, customer checklist, and review history screens.
+- [x] Write a short case study about isolation, activation rules, and one tradeoff.
+- [x] Rehearse setup from a clean checkout and update the README with proven steps.
+- [x] Rehearse shutdown/cleanup and document any intentionally retained resources.
+- [x] Record measured local results with the commit, environment, dataset, and limits.
 
 The core demo must remain usable locally. Hosting can be a later, separately
 requested task; it is not necessary to complete this plan.

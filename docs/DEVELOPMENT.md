@@ -50,6 +50,8 @@ It restores all five workflow scenarios and invalidates old demo sessions.
 Run `pnpm browser:install` once for a task-owned Chromium headless installation in
 `.local/browsers/`. Reuse it across checks instead of downloading another browser
 per run. CI installs the same pinned headless browser and its Linux dependencies.
+Both browser installation and verification honor `PLAYWRIGHT_BROWSERS_PATH` when
+explicitly set, so an isolated checkout can reuse an existing task-owned download.
 `pnpm verify` runs two Chromium journeys against its built API/web, with fresh
 browser contexts. The denied-access journey is read-only; the correction journey
 retains state through activation. Each verification gets a fresh database. The
