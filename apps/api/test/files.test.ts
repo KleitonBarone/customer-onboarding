@@ -4,7 +4,7 @@ import { after, before, test } from "node:test";
 import { createApp } from "../src/app.js";
 import { connectDatabase, migrateDatabase } from "../src/database.js";
 import { seedDatabase } from "../src/seed.js";
-import { detail, login, upload } from "./helpers.js";
+import { detail, fixtureOnboarding, login, upload } from "./helpers.js";
 
 const url = process.env.DATABASE_URL;
 const storageRoot = process.env.STORAGE_ROOT;
@@ -14,6 +14,7 @@ const app = await createApp(db, { demo: true, storageRoot });
 before(async () => {
   await migrateDatabase(db);
   await seedDatabase(db);
+  await fixtureOnboarding(db, "private-documents");
 });
 after(async () => {
   await app.close();
@@ -28,7 +29,7 @@ test("uploads enforce formats, size limits, customer role, and scoped identifier
       await upload(
         app,
         cookie,
-        "juniper-agreement",
+        "private-documents-agreement",
         0,
         Buffer.from("<script>bad</script>"),
         "agreement.pdf",
@@ -37,21 +38,35 @@ test("uploads enforce formats, size limits, customer role, and scoped identifier
     400,
   );
   assert.equal(
-    (await upload(app, cookie, "juniper-agreement", 0, Buffer.from("%PDF-").subarray(0, 2)))
-      .statusCode,
+    (
+      await upload(
+        app,
+        cookie,
+        "private-documents-agreement",
+        0,
+        Buffer.from("%PDF-").subarray(0, 2),
+      )
+    ).statusCode,
     400,
   );
   assert.equal(
-    (await upload(app, cookie, "juniper-agreement", 0, Buffer.alloc(2 * 1024 * 1024 + 1, 65)))
-      .statusCode,
+    (
+      await upload(
+        app,
+        cookie,
+        "private-documents-agreement",
+        0,
+        Buffer.alloc(2 * 1024 * 1024 + 1, 65),
+      )
+    ).statusCode,
     413,
   );
   assert.equal(
-    (await upload(app, await login(app, "ada"), "juniper-agreement", 0, pdf)).statusCode,
+    (await upload(app, await login(app, "ada"), "private-documents-agreement", 0, pdf)).statusCode,
     403,
   );
   assert.equal(
-    (await upload(app, await login(app, "owen"), "juniper-agreement", 0, pdf)).statusCode,
+    (await upload(app, await login(app, "owen"), "private-documents-agreement", 0, pdf)).statusCode,
     404,
   );
   assert.equal((await upload(app, cookie, "beacon-agreement", 0, pdf)).statusCode, 404);
@@ -59,9 +74,9 @@ test("uploads enforce formats, size limits, customer role, and scoped identifier
 
 test("private downloads are authorized and failed replacements leave no orphan files", async () => {
   const cookie = await login(app, "maya");
-  const response = await upload(app, cookie, "juniper-agreement", 0, pdf);
+  const response = await upload(app, cookie, "private-documents-agreement", 0, pdf);
   assert.equal(response.statusCode, 200, response.body);
-  const record = await detail(app, cookie);
+  const record = await detail(app, cookie, "private-documents");
   const revision = record.revisions.find((item) => item.fileName === "agreement.pdf");
   assert.ok(revision);
   assert.equal(revision.number, 1);
@@ -94,7 +109,8 @@ test("private downloads are authorized and failed replacements leave no orphan f
   );
   const before = await readdir(storageRoot);
   assert.equal(
-    (await upload(app, cookie, "juniper-agreement", 0, pdf, "replacement.pdf")).statusCode,
+    (await upload(app, cookie, "private-documents-agreement", 0, pdf, "replacement.pdf"))
+      .statusCode,
     409,
   );
   assert.deepEqual(await readdir(storageRoot), before);

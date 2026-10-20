@@ -8,6 +8,7 @@ import {
 import { createApp } from "../src/app.js";
 import { connectDatabase, migrateDatabase } from "../src/database.js";
 import { seedDatabase } from "../src/seed.js";
+import { fixtureOnboarding } from "./helpers.js";
 
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error("Run tests through pnpm verify");
@@ -87,10 +88,13 @@ test("customers see only assigned onboarding identifiers and workspace employees
   const employees = onboardingsSchema.assert(
     (await app.inject({ url: "/api/onboardings", headers: { cookie: manager } })).json(),
   );
-  assert.deepEqual(
-    employees.map((item) => item.id),
-    ["beacon", "juniper"],
-  );
+  assert.deepEqual(employees.map((item) => item.id).sort(), [
+    "atlas",
+    "beacon",
+    "cedar",
+    "juniper",
+    "lumen",
+  ]);
   assert.equal(
     (await app.inject({ url: "/api/onboardings/westhaven", headers: { cookie: manager } }))
       .statusCode,
@@ -118,8 +122,10 @@ test("the persona picker is unavailable outside explicit demo mode", async () =>
 });
 
 test("a customer submission is visible to employees, audited, and scoped on writes", async () => {
+  const fixtureId = "access-submission";
+  await fixtureOnboarding(db, fixtureId);
   const cookie = await session("maya");
-  const url = "/api/onboardings/juniper/requirements/juniper-company/submissions";
+  const url = `/api/onboardings/${fixtureId}/requirements/${fixtureId}-company/submissions`;
   const payload = {
     kind: "company",
     legalName: "Juniper Retail Ltd",
@@ -162,7 +168,7 @@ test("a customer submission is visible to employees, audited, and scoped on writ
   const detail = detailSchema.assert(
     (
       await app.inject({
-        url: "/api/onboardings/juniper",
+        url: `/api/onboardings/${fixtureId}`,
         headers: { cookie: await session("ada") },
       })
     ).json(),

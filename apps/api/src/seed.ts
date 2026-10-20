@@ -1,5 +1,6 @@
 import type { Database } from "./database.js";
 import * as s from "./schema.js";
+import { additionalPersonas, scenarioAccounts, seedScenario } from "./seed-scenarios.js";
 
 export const demoNow = "2026-10-15T12:00:00.000Z";
 export const personaSeeds = [
@@ -45,6 +46,7 @@ export const personaSeeds = [
     workspaceId: "elsewhere",
     role: "customer",
   },
+  ...additionalPersonas,
 ] as const;
 
 export const requirementSeeds = [
@@ -54,7 +56,7 @@ export const requirementSeeds = [
   { kind: "contact", title: "Launch contact" },
 ] as const;
 
-export async function seedDatabase(db: Database) {
+export async function seedDatabase(db: Pick<Database, "transaction">, storageRoot?: string) {
   await db.transaction(async (tx) => {
     await tx
       .insert(s.demoIdentity)
@@ -77,39 +79,25 @@ export async function seedDatabase(db: Database) {
         personaSeeds.map(({ id, workspaceId, role }) => ({ id, userId: id, workspaceId, role })),
       )
       .onConflictDoNothing();
-    const accounts = [
-      {
-        id: "juniper",
-        name: "Juniper Retail",
-        workspaceId: "northstar",
-        ownerId: "ada",
-        member: "maya",
-      },
-      {
-        id: "beacon",
-        name: "Beacon Supply",
-        workspaceId: "northstar",
-        ownerId: "ada",
-        member: "owen",
-      },
-      {
-        id: "westhaven",
-        name: "Westhaven Stores",
-        workspaceId: "elsewhere",
-        ownerId: "iris",
-        member: "leo",
-      },
-    ];
-    for (const { member, ...account } of accounts) {
+    const accounts = scenarioAccounts;
+    for (const config of accounts) {
+      const account = {
+        id: config.id,
+        name: config.name,
+        workspaceId: config.workspaceId,
+        ownerId: config.ownerId,
+      };
+      const member = config.member;
       await tx.insert(s.customerAccounts).values(account).onConflictDoNothing();
       await tx
         .insert(s.customerMemberships)
         .values({ id: `${account.id}-${member}`, customerId: account.id, membershipId: member })
         .onConflictDoNothing();
-      await tx
+      const inserted = await tx
         .insert(s.onboardings)
-        .values({ id: account.id, customerId: account.id, createdAt: "2026-10-12T09:00:00.000Z" })
-        .onConflictDoNothing();
+        .values({ id: account.id, customerId: account.id, createdAt: config.createdAt })
+        .onConflictDoNothing()
+        .returning({ id: s.onboardings.id });
       await tx
         .insert(s.requirements)
         .values(
@@ -120,6 +108,7 @@ export async function seedDatabase(db: Database) {
           })),
         )
         .onConflictDoNothing();
+      if (inserted.length) await seedScenario(tx, config, storageRoot);
     }
   });
 }
