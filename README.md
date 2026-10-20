@@ -7,9 +7,10 @@ checklist; employees see the submitted information and its history.
 This portfolio demo uses fictional companies and disposable local services. It
 needs no customer accounts, paid integrations, email service, or public hosting.
 
-The first working slice includes customer submissions, employee visibility,
-server-side demo sessions, and workspace/customer access checks. Document review,
-activation, reminders, and the recorded walkthrough are the next delivery stages.
+The current app includes customer submissions, private document downloads,
+reviewer approvals/correction requests, revision history, server-side demo
+sessions, and workspace/customer access checks. Activation, reminders, and the
+recorded walkthrough are the next delivery stages.
 See the [implementation plan](PLAN.md) for current progress.
 
 ## Try the local demo
@@ -29,6 +30,11 @@ to open Juniper Retail's checklist. Add company details and submit them for revi
 Switch to **Ada Wells**, open Juniper Retail, and see the submission and its actor
 in the activity history. **Owen Reed** belongs to a different customer; **Iris Park**
 belongs to another workspace. Neither can access Juniper's records.
+
+For document review, upload a synthetic PDF agreement as Maya, then choose
+**Noah Ellis** to approve it or request a correction with a reason. Maya sees that
+reason, can upload a replacement, and retains access to earlier file revisions.
+The sample import requirement accepts UTF-8 CSV. Uploads are limited to 2 MiB.
 
 The persona picker is local demo authentication, not production login. All names,
 documents, companies, and activity are synthetic. Requests derive access from

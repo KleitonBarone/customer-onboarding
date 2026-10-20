@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import type { Actor, OnboardingDetail } from "../../../packages/contracts/src/index.js";
 import { api, request } from "./api.js";
+import { RequirementCard } from "./RequirementCard.js";
 
 const labels = {
   missing: "Not submitted",
@@ -243,28 +244,8 @@ function Onboarding({
   actor: Actor;
   refresh: () => Promise<void>;
 }) {
-  const { onboarding, requirements, revisions, activity } = detail;
+  const { onboarding, requirements, activity } = detail;
   const approved = requirements.filter((item) => item.state === "approved").length;
-  const [editing, setEditing] = useState<string | null>(null);
-  const submission = useMutation({
-    mutationFn: async ({
-      id,
-      content,
-      version,
-    }: {
-      id: string;
-      content: string;
-      version: number;
-    }) =>
-      request(`/onboardings/${onboarding.id}/requirements/${id}/submissions`, {
-        method: "POST",
-        body: JSON.stringify({ content, version }),
-      }),
-    onSuccess: async () => {
-      setEditing(null);
-      await refresh();
-    },
-  });
   return (
     <>
       <div className="page-heading">
@@ -285,87 +266,16 @@ function Onboarding({
               {approved} of {requirements.length} approved
             </span>
           </div>
-          {submission.error && (
-            <p className="error" role="alert">
-              {submission.error.message}
-            </p>
-          )}
-          {requirements.map((requirement, index) => {
-            const revision = revisions.find((item) => item.id === requirement.currentRevisionId);
-            return (
-              <article className="requirement" key={requirement.id}>
-                <div className="requirement-heading">
-                  <span className={`step ${requirement.state === "approved" ? "complete" : ""}`}>
-                    {requirement.state === "approved" ? "✓" : index + 1}
-                  </span>
-                  <div>
-                    <h3>{requirement.title}</h3>
-                    <span className={`state-label state-${requirement.state}`}>
-                      {labels[requirement.state]}
-                    </span>
-                  </div>
-                  {actor.role === "customer" &&
-                    (requirement.kind === "company" || requirement.kind === "contact") && (
-                      <button
-                        type="button"
-                        className="secondary small"
-                        onClick={() => {
-                          submission.reset();
-                          setEditing(editing === requirement.id ? null : requirement.id);
-                        }}
-                      >
-                        {revision ? "Update details" : "Add details"}
-                      </button>
-                    )}
-                </div>
-                {editing === requirement.id && (
-                  <form
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      const form = new FormData(event.currentTarget);
-                      submission.mutate({
-                        id: requirement.id,
-                        content: String(form.get("content") ?? ""),
-                        version: requirement.version,
-                      });
-                    }}
-                  >
-                    <label htmlFor={`content-${requirement.id}`}>
-                      {requirement.kind === "company"
-                        ? "Legal company name and registered address"
-                        : "Launch contact name and email"}
-                    </label>
-                    <textarea
-                      id={`content-${requirement.id}`}
-                      name="content"
-                      required
-                      maxLength={5000}
-                      defaultValue={revision?.content}
-                      rows={4}
-                    />
-                    <div className="form-actions">
-                      <button type="submit" disabled={submission.isPending}>
-                        {submission.isPending ? "Submitting…" : "Submit for review"}
-                      </button>
-                      <button
-                        type="button"
-                        className="text-button"
-                        onClick={() => setEditing(null)}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                )}
-                {revision && (
-                  <div className="submission-preview">
-                    <p>{revision.content}</p>
-                    <small>Submitted by {revision.actor}</small>
-                  </div>
-                )}
-              </article>
-            );
-          })}
+          {requirements.map((requirement, index) => (
+            <RequirementCard
+              key={requirement.id}
+              detail={detail}
+              requirement={requirement}
+              index={index}
+              actor={actor}
+              refresh={refresh}
+            />
+          ))}
         </section>
         <aside className="activity-panel">
           <h2>Activity</h2>

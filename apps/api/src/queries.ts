@@ -79,6 +79,10 @@ export async function getOnboarding(db: Database, actor: Actor, id: string) {
       id: s.revisions.id,
       requirementId: s.revisions.requirementId,
       content: s.revisions.content,
+      number: s.revisions.number,
+      fileName: s.revisions.fileName,
+      mediaType: s.revisions.mediaType,
+      size: s.revisions.size,
       actor: s.users.name,
       createdAt: s.revisions.createdAt,
     })
@@ -97,7 +101,22 @@ export async function getOnboarding(db: Database, actor: Actor, id: string) {
     .from(s.activity)
     .innerJoin(s.users, eq(s.users.id, s.activity.actorId))
     .where(eq(s.activity.onboardingId, id))
-    .orderBy(desc(s.activity.createdAt));
+    .orderBy(desc(s.activity.position));
+  const reviews = await db
+    .select({
+      id: s.reviews.id,
+      revisionId: s.reviews.revisionId,
+      actor: s.users.name,
+      decision: s.reviews.decision,
+      reason: s.reviews.reason,
+      createdAt: s.reviews.createdAt,
+    })
+    .from(s.reviews)
+    .innerJoin(s.revisions, eq(s.revisions.id, s.reviews.revisionId))
+    .innerJoin(s.requirements, eq(s.requirements.id, s.revisions.requirementId))
+    .innerJoin(s.users, eq(s.users.id, s.reviews.actorId))
+    .where(eq(s.requirements.onboardingId, id))
+    .orderBy(desc(s.reviews.createdAt));
   return {
     onboarding: {
       ...onboarding,
@@ -107,6 +126,7 @@ export async function getOnboarding(db: Database, actor: Actor, id: string) {
     },
     requirements,
     revisions,
+    reviews,
     activity,
   };
 }

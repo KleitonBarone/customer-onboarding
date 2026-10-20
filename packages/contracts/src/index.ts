@@ -42,6 +42,10 @@ export const revisionSchema = type({
   id: "string",
   requirementId: "string",
   content: "string",
+  number: "number",
+  fileName: "string | null",
+  mediaType: "string | null",
+  size: "number | null",
   actor: "string",
   createdAt: "string",
 });
@@ -51,14 +55,31 @@ export const activitySchema = type({
   message: "string",
   createdAt: "string",
 });
+export const reviewSchema = type({
+  id: "string",
+  revisionId: "string",
+  actor: "string",
+  decision: "'approved' | 'changes_requested'",
+  reason: "string",
+  createdAt: "string",
+});
+export const reviewInput = type({
+  revisionId: "string > 0",
+  version: "number.integer >= 0",
+  decision: "'approved' | 'changes_requested'",
+  reason: "string <= 1000",
+  "+": "reject",
+});
 export const detailSchema = type({
   onboarding: onboardingSchema,
   requirements: requirementSchema.array(),
   revisions: revisionSchema.array(),
+  reviews: reviewSchema.array(),
   activity: activitySchema.array(),
 });
 export type OnboardingDetail = typeof detailSchema.infer;
 export const sessionInput = type({ membershipId: "string > 0", "+": "reject" });
+export const versionInput = type("number.integer >= 0");
 export const submissionInput = type({
   content: "0 < string <= 5000",
   version: "number.integer >= 0",

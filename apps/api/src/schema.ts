@@ -95,13 +95,33 @@ export const revisions = pgTable("revisions", {
     .notNull()
     .references(() => requirements.id),
   content: text("content").notNull(),
+  number: integer("number").notNull().default(1),
+  storageId: text("storage_id"),
+  fileName: text("file_name"),
+  mediaType: text("media_type"),
+  size: integer("size"),
   actorId: text("actor_id")
     .notNull()
     .references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).notNull(),
 });
+export const reviewDecision = pgEnum("review_decision", ["approved", "changes_requested"]);
+export const reviews = pgTable("reviews", {
+  id: text("id").primaryKey(),
+  revisionId: text("revision_id")
+    .notNull()
+    .unique()
+    .references(() => revisions.id),
+  actorId: text("actor_id")
+    .notNull()
+    .references(() => users.id),
+  decision: reviewDecision("decision").notNull(),
+  reason: text("reason").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).notNull(),
+});
 export const activity = pgTable("activity", {
   id: text("id").primaryKey(),
+  position: integer("position").generatedAlwaysAsIdentity(),
   onboardingId: text("onboarding_id")
     .notNull()
     .references(() => onboardings.id),
