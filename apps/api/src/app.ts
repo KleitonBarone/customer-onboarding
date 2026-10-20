@@ -121,12 +121,21 @@ export async function createApp(
       const actor = await actorFor(db, request, now());
       const input = submissionInput(request.body);
       if (input instanceof type.errors) throw new ApiError(400, input.summary);
+      const content =
+        input.kind === "company"
+          ? `${input.legalName.trim()}\n${input.registeredAddress.trim()}`
+          : `${input.name.trim()}\n${input.email.trim()}`;
+      const complete =
+        input.kind === "company"
+          ? input.legalName.trim() && input.registeredAddress.trim()
+          : input.name.trim() && input.email.trim();
+      if (!complete) throw new ApiError(400, "Complete every requested field.");
       return submitContent(
         db,
         actor,
         request.params.id,
         request.params.requirementId,
-        input,
+        { content, version: input.version, kind: input.kind },
         now(),
       );
     },

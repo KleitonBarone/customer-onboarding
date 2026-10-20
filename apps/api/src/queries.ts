@@ -1,18 +1,9 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import type { Actor } from "../../../packages/contracts/src/index.js";
+import { onboardingStatus } from "../../../packages/contracts/src/workflow.js";
 import { onboardingFor } from "./access.js";
 import type { Database } from "./database.js";
 import * as s from "./schema.js";
-
-function lifecycle(
-  onboarding: typeof s.onboardings.$inferSelect,
-  requirements: { mandatory: boolean; state: typeof s.requirements.$inferSelect.state }[],
-) {
-  if (onboarding.activeAt) return "active" as const;
-  if (requirements.filter((item) => item.mandatory).every((item) => item.state === "approved"))
-    return "ready" as const;
-  return onboarding.startedAt ? ("in_progress" as const) : ("draft" as const);
-}
 
 export async function listOnboardings(db: Database, actor: Actor) {
   const membership =
@@ -55,7 +46,7 @@ export async function listOnboardings(db: Database, actor: Actor) {
     ...onboarding,
     company: account.name,
     owner,
-    status: lifecycle(
+    status: onboardingStatus(
       onboarding,
       allRequirements.filter((item) => item.onboardingId === onboarding.id),
     ),
@@ -122,7 +113,7 @@ export async function getOnboarding(db: Database, actor: Actor, id: string) {
       ...onboarding,
       company: account.name,
       owner: owner?.name ?? "Unassigned",
-      status: lifecycle(onboarding, requirements),
+      status: onboardingStatus(onboarding, requirements),
     },
     requirements,
     revisions,

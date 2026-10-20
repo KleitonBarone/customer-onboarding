@@ -81,7 +81,15 @@ export type OnboardingDetail = typeof detailSchema.infer;
 export const sessionInput = type({ membershipId: "string > 0", "+": "reject" });
 export const versionInput = type("number.integer >= 0");
 export const submissionInput = type({
-  content: "0 < string <= 5000",
+  kind: "'company'",
+  legalName: "0 < string <= 200",
+  registeredAddress: "0 < string <= 500",
+  version: "number.integer >= 0",
+  "+": "reject",
+}).or({
+  kind: "'contact'",
+  name: "0 < string <= 100",
+  email: "string.email",
   version: "number.integer >= 0",
   "+": "reject",
 });
