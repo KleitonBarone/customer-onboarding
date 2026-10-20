@@ -49,7 +49,13 @@ It restores all five workflow scenarios and invalidates old demo sessions.
 
 Run `pnpm browser:install` once for a task-owned Chromium headless installation in
 `.local/browsers/`. Reuse it across checks instead of downloading another browser
-per run. Automated browser journeys will join verification in delivery PR 6.
+per run. CI installs the same pinned headless browser and its Linux dependencies.
+`pnpm verify` runs two Chromium journeys against its built API/web, with fresh
+browser contexts. The denied-access journey is read-only; the correction journey
+retains state through activation. Each verification gets a fresh database. The
+tests have one worker, no retries, and explicit readiness/identity assertions.
+Failed browser checks retain screenshots and traces in `.local/reports/browser/`;
+the next run replaces that browser output. CI uploads diagnostics for three days.
 
 For interactive inspection, keep `pnpm dev` running and open its reported URL in
 the thread's collaborative browser. If that browser is unavailable, Playwright

@@ -224,12 +224,12 @@ the database, and replaying a reminder run does not create duplicate messages.
 
 ### 4. Focused verification and interface quality
 
-- [ ] Test workspace and customer isolation, including file download routes.
-- [ ] Test activation gates, revision invalidation, and concurrent review conflicts.
+- [x] Test workspace and customer isolation, including file download routes.
+- [x] Test activation gates, revision invalidation, and concurrent review conflicts.
 - [x] Test notification restart behavior and reminder deduplication.
-- [ ] Add two browser journeys: a correction through activation, and denied access.
-- [ ] Run built-app browser journeys on disposable services with failure diagnostics.
-- [ ] Check keyboard use, form labels, narrow layouts, and meaningful error states.
+- [x] Add two browser journeys: a correction through activation, and denied access.
+- [x] Run built-app browser journeys on disposable services with failure diagnostics.
+- [x] Check keyboard use, form labels, narrow layouts, and meaningful error states.
 
 Use real PostgreSQL integration tests for transaction and isolation behavior.
 Keep pure rule tests small. Avoid snapshots or tests that just repeat component

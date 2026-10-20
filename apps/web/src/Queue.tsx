@@ -48,6 +48,7 @@ export function Queue({
           Status
           <select
             id="queue-status"
+            aria-label="Status"
             value={filters.status ?? ""}
             onChange={(event) => {
               const next = { ...filters, offset: 0 };
@@ -70,6 +71,7 @@ export function Queue({
           Account manager
           <select
             id="queue-owner"
+            aria-label="Account manager"
             value={filters.ownerId ?? ""}
             onChange={(event) => {
               const next = { ...filters, offset: 0 };

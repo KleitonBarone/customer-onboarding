@@ -19,6 +19,7 @@
     "format": "biome check --write .",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test --test-concurrency=1 apps/api/test/*.test.ts",
+    "test:e2e": "playwright test --config tests/playwright.config.ts",
     "build": "pnpm --filter @onboarding/web build && tsc -p apps/api/tsconfig.build.json",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "db:generate": "drizzle-kit generate --config apps/api/drizzle.config.ts"
