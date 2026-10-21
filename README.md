@@ -6,8 +6,7 @@ reviewers explain corrections; account managers see who needs to act next.
 
 ![Employee queue showing statuses, owners, ages, and next actions](docs/media/queue.png)
 
-[Watch the 90-second English walkthrough](docs/media/walkthrough.mp4) ·
-[Transcript and screenshots](docs/WALKTHROUGH.md) ·
+[Screenshots](docs/SCREENSHOTS.md) ·
 [Engineering case study](docs/CASE_STUDY.md)
 
 ## What works

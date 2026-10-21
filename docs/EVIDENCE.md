@@ -51,9 +51,7 @@ data. Tests create additional isolated fixture accounts inside their disposable 
 - The foundation was verified twice from fresh state. A controlled startup failure
   and forced-stop recovery left owned resources cleaned. Two guarded resets
   restored Juniper's original correction, version, four revisions and private PDF.
-- The walkthrough is **90.44 seconds**, H.264/AAC at 1280×800, 2,402,067 bytes.
-  It was decoded successfully and screenshots were visually inspected. Narration
-  is synthetic English; the screen interaction is the actual local app.
+- Portfolio screenshots show the actual local app and were visually inspected.
 
 ## Clean checkout and delivery records
 
@@ -88,7 +86,7 @@ merge SHA. [Delivery](DELIVERY.md) describes the sequence.
 
 Runs remove owned processes, timers, containers, networks, volumes and uploads.
 The clean checkout is removed after rehearsal. Final handoff removes task-created
-temporary recordings, narration, browser binaries and the newly pulled PostgreSQL
+temporary files, browser binaries and the newly pulled PostgreSQL
 image after the last merged-main verification. Installed project dependencies,
 the shared pnpm store, two compact cleanup manifests, the original delivery-plan
 HTML, and committed media remain.
