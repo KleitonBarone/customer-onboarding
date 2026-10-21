@@ -160,7 +160,7 @@ Seed two fictional providers, several customers, and these scenarios:
 - A second workspace and a separate customer within the first workspace for
   cross-workspace and cross-customer access checks.
 
-Use fixed identifiers and an injectable clock so walkthroughs and reminder tests
+Use fixed identifiers and an injectable clock so demo flows and reminder tests
 do not depend on random output or real waiting. A notification inbox shows messages
 that would have been sent. Advancing the demo clock produces a single reminder
 per policy window, including after a process restart.
@@ -237,7 +237,6 @@ markup. Capture failures with enough context to reproduce them.
 
 ### 5. Portfolio handoff
 
-- [x] Record an English walkthrough of roughly 90 seconds.
 - [x] Capture the queue, customer checklist, and review history screens.
 - [x] Write a short case study about isolation, activation rules, and one tradeoff.
 - [x] Rehearse setup from a clean checkout and update the README with proven steps.

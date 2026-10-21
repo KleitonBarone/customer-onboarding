@@ -19,8 +19,8 @@ commits or PRs are allowed when an observed failure requires them.
    restart/concurrency/deduplication tests.
 6. `feat/06-workflow-verification`: automate the two built-app browser journeys,
    refine keyboard/narrow layouts, and run the same isolated lifecycle in CI.
-7. `docs/07-portfolio-handoff`: rehearse clean setup, record the English walkthrough
-   and screenshots, write the case study, record measured local evidence, and
+7. `docs/07-portfolio-handoff`: rehearse clean setup, capture screenshots,
+   write the case study, record measured local evidence, and
    verify final cleanup.
 
 Before each PR, merge the latest origin/main into the feature branch and run
