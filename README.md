@@ -88,3 +88,7 @@ customer adoption or business-impact evidence.
 
 See [measured results](docs/EVIDENCE.md), [delivery PRs](docs/DELIVERY.md), and the
 [completed plan](PLAN.md).
+
+## License
+
+[MIT](LICENSE), copyright 2026 Kleiton Barone.
