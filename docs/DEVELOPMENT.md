@@ -21,6 +21,13 @@ on the next invocation. `pnpm env:status` reports remaining project containers a
 run manifests. Cleanup refuses an unrelated live owner or a verification still
 in progress.
 
+API and shared TypeScript source changes restart the directly owned API process
+after a short debounce. The run keeps its database, uploads, ports and sessions.
+Watchers close during shutdown. Setup commands may exit successfully; API, web
+and WSL keep-alive processes are monitored as services, so any unexpected service
+exit, including code 0, tears down the run. Invalid backend source that cannot
+restart also fails the run with diagnostics.
+
 On Windows, a recorded WSL `sleep` process keeps the distro active while the
 database is needed. Cleanup stops it after removing the run's database resources.
 The runner selects an explicit unused Docker subnet, so exhausted automatic
@@ -32,6 +39,13 @@ migrations/seeds, runs `pnpm check`, starts the built API and Vite preview, veri
 the web/API proxy, and tears down in `finally`. `pnpm check` runs lint, strict
 type checking, PostgreSQL integration tests, and builds. Tests require the
 connection injected by the runner; use `verify` for a complete run.
+
+Preparation, API startup, and all database test entry points verify the live run
+owner, manifest, exact database URL, and recorded Docker container/project/port
+before connecting. Database tests additionally require verification mode, so
+`pnpm test` cannot write to an arbitrary inherited `DATABASE_URL` or the interactive
+demo. `pnpm test:unit` runs the ownership and service-exit regressions independently
+of Docker and PostgreSQL; `pnpm check` includes them before database tests.
 
 The runner records identities and task-owned paths in `.local/runs/<run-id>/`.
 API and web processes are launched directly so their recorded identities survive
@@ -54,8 +68,11 @@ Both browser installation and verification honor `PLAYWRIGHT_BROWSERS_PATH` when
 explicitly set, so an isolated checkout can reuse an existing task-owned download.
 `pnpm verify` runs two Chromium journeys against its built API/web, with fresh
 browser contexts. The denied-access journey is read-only; the correction journey
-retains state through activation. Each verification gets a fresh database. The
-tests have one worker, no retries, and explicit readiness/identity assertions.
+starts with Beacon's empty checklist and submits company details, contact details,
+CSV and PDF files before correction, review and activation. It checks both file
+downloads against the submitted bytes and retains state through activation.
+Each verification gets a fresh database. The tests have one worker, no retries,
+and explicit readiness/identity assertions.
 Failed browser checks retain screenshots and traces in `.local/reports/browser/`;
 the next run replaces that browser output. CI uploads diagnostics for three days.
 

@@ -58,8 +58,9 @@ pnpm env:status
 ```
 
 Verification creates separate database, storage, and ports; applies migrations and
-fixtures; runs lint, strict types, 20 PostgreSQL/API tests, builds, and two Chromium
-journeys; then removes its services. CI runs the same command on Linux. Failed
+fixtures; runs lint, strict types, API/domain and environment regression tests,
+builds, and two Chromium journeys; then removes its services. CI runs the same
+command on Linux. Failed
 browser checks retain bounded diagnostics. Browser installation is reused under
 `.local/browsers/`.
 
@@ -69,6 +70,10 @@ before recreating that stack. It becomes the new foreground session.
 `env:clean` stops the demo gracefully and recovers recorded leftovers after a
 forced stop. Follow the [development guide](docs/DEVELOPMENT.md) for ownership,
 ports, migrations, and diagnostics.
+
+During development, API and shared TypeScript edits restart the API while keeping
+the current database, uploads, and sessions. An unexpected service exit stops and
+cleans the run, including a service that exits with code 0.
 
 ## Design and limits
 

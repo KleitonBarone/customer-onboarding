@@ -1,13 +1,12 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
+import { requireRunContext } from "../../../scripts/run-context.js";
 import { connectDatabase, migrateDatabase } from "../src/database.js";
 import { assertDemoDatabase } from "../src/reset.js";
 import { demoIdentity } from "../src/schema.js";
 import { seedDatabase } from "../src/seed.js";
 
-const url = process.env.DATABASE_URL;
-if (!url || process.env.APP_ENV !== "demo" || !process.env.DEMO_RUN_ID)
-  throw new Error("Use the disposable verification runner");
+const { url } = await requireRunContext("verify");
 const { db, client } = connectDatabase(url);
 before(async () => {
   await migrateDatabase(db);

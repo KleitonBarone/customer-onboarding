@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, type FSWatcher, watch } from "node:fs";
 import {
   appendFile,
   mkdir,
@@ -19,6 +19,13 @@ import { fileURLToPath } from "node:url";
 import { type } from "arktype";
 import { connectDatabase } from "../apps/api/src/database.js";
 import { assertDemoDatabase } from "../apps/api/src/reset.js";
+import {
+  databaseUrl,
+  processIdentity as identity,
+  type Manifest,
+  manifestSchema,
+} from "./run-context.js";
+import { serviceExit } from "./service.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const runs = path.join(root, ".local", "runs");
@@ -29,19 +36,6 @@ const workspace = windows
       .replace(/^([A-Za-z]):/, (_, drive: string) => `/mnt/${drive.toLowerCase()}`)
       .replaceAll("\\", "/")
   : root;
-const manifestSchema = type({
-  id: "string",
-  project: "string",
-  status: "'running' | 'cleaned' | 'cleanup_failed'",
-  createdAt: "string",
-  owner: "number",
-  "ownerIdentity?": "string",
-  "mode?": "'dev' | 'verify'",
-  "subnet?": "string",
-  processes: type({ pid: "number", identity: "string", "keepAlive?": "boolean" }).array(),
-  ports: { ui: "number", api: "number", db: "number" },
-});
-type Manifest = typeof manifestSchema.infer;
 
 function command(binary: string, args: string[], env: NodeJS.ProcessEnv = process.env) {
   const child = spawn(binary, args, {
@@ -144,22 +138,6 @@ async function freePort(preferred = 0) {
   return address.port;
 }
 
-async function identity(pid: number) {
-  try {
-    const output = windows
-      ? await command("powershell.exe", [
-          "-NoProfile",
-          "-NonInteractive",
-          "-Command",
-          `(Get-Process -Id ${pid} -ErrorAction Stop).StartTime.ToUniversalTime().ToString('o')`,
-        ]).result
-      : await command("ps", ["-p", String(pid), "-o", "lstart="]).result;
-    return output.trim();
-  } catch {
-    return null;
-  }
-}
-
 function directoryFor(id: string) {
   if (!/^[a-z0-9-]+$/.test(id)) throw new Error("Invalid run identity");
   return path.join(runs, id);
@@ -199,25 +177,26 @@ async function manifests() {
   return found;
 }
 
-async function cleanup(manifest: Manifest) {
-  const stop = async (child: Manifest["processes"][number]) => {
-    if ((await identity(child.pid)) !== child.identity) return;
-    if (windows)
-      await command("taskkill.exe", ["/PID", String(child.pid), "/T", "/F"]).result.catch(
-        async (error: unknown) => {
-          if (await identity(child.pid)) throw error;
-        },
-      );
-    else {
-      try {
-        process.kill(-child.pid, "SIGTERM");
-      } catch {
-        /* A child may have exited after its identity check. */
-      }
+async function stopProcess(child: Manifest["processes"][number]) {
+  if ((await identity(child.pid)) !== child.identity) return;
+  if (windows)
+    await command("taskkill.exe", ["/PID", String(child.pid), "/T", "/F"]).result.catch(
+      async (error: unknown) => {
+        if (await identity(child.pid)) throw error;
+      },
+    );
+  else {
+    try {
+      process.kill(-child.pid, "SIGTERM");
+    } catch {
+      /* A child may have exited after its identity check. */
     }
-  };
+  }
+}
+
+async function cleanup(manifest: Manifest) {
   for (const child of manifest.processes.toReversed().filter((item) => !item.keepAlive))
-    await stop(child);
+    await stopProcess(child);
   await compose(manifest, ["down", "--volumes", "--remove-orphans", "--timeout", "5"]);
   const remaining = await docker([
     "ps",
@@ -226,7 +205,7 @@ async function cleanup(manifest: Manifest) {
     `label=com.docker.compose.project=${manifest.project}`,
   ]);
   if (remaining.trim()) throw new Error(`Containers remain for ${manifest.project}`);
-  for (const child of manifest.processes.filter((item) => item.keepAlive)) await stop(child);
+  for (const child of manifest.processes.filter((item) => item.keepAlive)) await stopProcess(child);
   for (const child of manifest.processes) {
     if ((await identity(child.pid)) === child.identity)
       throw new Error(`Owned process ${child.pid} is still running`);
@@ -283,10 +262,6 @@ async function doctor() {
       console.log(`Port ${port}: in use; verification will choose another port`);
     }
   }
-}
-
-function databaseUrl(manifest: Manifest) {
-  return `postgres://onboarding:local-disposable-only@127.0.0.1:${manifest.ports.db}/customer_onboarding_demo`;
 }
 
 async function requestStop(manifest: Manifest) {
@@ -376,8 +351,15 @@ async function run(mode: "dev" | "verify", preferred?: Manifest["ports"]) {
       );
     },
   });
-  const active: ReturnType<typeof spawn>[] = [];
-  const start = async (args: string[], binary = process.execPath, keepAlive = false) => {
+  let serviceFailure: Error | undefined;
+  const expectedApiExits = new Set<ReturnType<typeof spawn>>();
+  const watchers: FSWatcher[] = [];
+  let reloadAt: number | undefined;
+  const start = async (
+    args: string[],
+    binary = process.execPath,
+    options: { keepAlive?: boolean; service?: string } = {},
+  ) => {
     const child = spawn(binary, args, {
       cwd: root,
       env: environment,
@@ -385,13 +367,21 @@ async function run(mode: "dev" | "verify", preferred?: Manifest["ports"]) {
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
     });
-    active.push(child);
+    if (options.service)
+      void serviceExit(child, options.service, () => expectedApiExits.has(child)).then((error) => {
+        serviceFailure ??= error;
+      });
     child.stdout?.pipe(log, { end: false });
     child.stderr?.pipe(log, { end: false });
     child.on("error", (error) => log.write(`${error.message}\n`));
     if (!child.pid) throw new Error("Child process did not start");
     const started = await identity(child.pid);
-    if (started) manifest.processes.push({ pid: child.pid, identity: started, keepAlive });
+    if (started)
+      manifest.processes.push({
+        pid: child.pid,
+        identity: started,
+        keepAlive: options.keepAlive ?? false,
+      });
     await save(manifest);
     return child;
   };
@@ -410,35 +400,47 @@ async function run(mode: "dev" | "verify", preferred?: Manifest["ports"]) {
   };
   console.log(`Run ${id}: ${manifest.project}; database port ${manifest.ports.db}`);
   try {
-    if (windows) await start(["-d", "Ubuntu", "--exec", "sleep", "infinity"], "wsl.exe", true);
+    if (windows)
+      await start(["-d", "Ubuntu", "--exec", "sleep", "infinity"], "wsl.exe", {
+        keepAlive: true,
+        service: "WSL keep-alive",
+      });
     if (process.env.VERIFY_FAIL_AT === "before-database")
       throw new Error("Controlled startup failure");
     console.log((await compose(manifest, ["up", "-d", "--wait", "--wait-timeout", "60"])).trim());
+    manifest.databaseContainerId = (await compose(manifest, ["ps", "-q", "database"])).trim();
+    await save(manifest);
     if (interrupted) return;
     await invoke(["exec", "tsx", "apps/api/src/prepare.ts"]);
     if (process.env.VERIFY_FAIL_AT === "after-database") throw new Error("Controlled test failure");
     if (mode === "verify") await invoke(["check"]);
-    const apiProcess = await start(
+    let apiProcess = await start(
       mode === "verify"
         ? ["apps/api/dist/apps/api/src/server.js"]
         : ["--import", "tsx", "apps/api/src/server.ts"],
+      process.execPath,
+      { service: "API" },
     );
     await ready(
       `http://127.0.0.1:${manifest.ports.api}/api/health`,
-      () => interrupted || apiProcess.exitCode !== null,
+      () => interrupted || !!serviceFailure,
     );
     const webRequire = createRequire(path.join(root, "apps", "web", "package.json"));
     const vite = path.join(path.dirname(webRequire.resolve("vite/package.json")), "bin", "vite.js");
-    await start([
-      vite,
-      ...(mode === "verify" ? ["preview"] : []),
-      "apps/web",
-      "--host",
-      "127.0.0.1",
-      "--port",
-      String(manifest.ports.ui),
-    ]);
-    await ready(environment.BASE_URL, () => interrupted);
+    await start(
+      [
+        vite,
+        ...(mode === "verify" ? ["preview"] : []),
+        "apps/web",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        String(manifest.ports.ui),
+      ],
+      process.execPath,
+      { service: "Web" },
+    );
+    await ready(environment.BASE_URL, () => interrupted || !!serviceFailure);
     console.log(
       `READY web=${environment.BASE_URL} api=http://127.0.0.1:${manifest.ports.api}; manifest=${path.join(directory, "manifest.json")}`,
     );
@@ -450,9 +452,59 @@ async function run(mode: "dev" | "verify", preferred?: Manifest["ports"]) {
       };
       if (pkg.scripts["test:e2e"]) await invoke(["test:e2e"]);
     } else {
+      // Restart the directly owned API process so reloads keep the database and
+      // cleanup still knows every live process, without an untracked supervisor.
+      for (const source of ["apps/api/src", "packages/contracts/src", "scripts"]) {
+        const watcher = watch(path.join(root, source), { recursive: true }, (_event, filename) => {
+          if (filename?.endsWith(".ts")) reloadAt = Date.now() + 150;
+        });
+        watcher.on("error", (error) => {
+          serviceFailure ??= error;
+        });
+        watchers.push(watcher);
+      }
       while (!interrupted && !existsSync(path.join(directory, "stop"))) {
-        if (active.some((child) => child.exitCode !== null && child.exitCode !== 0))
-          throw new Error("A development service exited; inspect the run log");
+        if (serviceFailure) throw serviceFailure;
+        if (reloadAt !== undefined && Date.now() >= reloadAt) {
+          reloadAt = undefined;
+          expectedApiExits.add(apiProcess);
+          const previous = manifest.processes.find((child) => child.pid === apiProcess.pid);
+          if (!previous) throw new Error("The API process is missing its ownership record");
+          const closed =
+            apiProcess.exitCode !== null || apiProcess.signalCode !== null
+              ? Promise.resolve()
+              : new Promise<void>((resolve) => {
+                  apiProcess.once("exit", () => resolve());
+                });
+          await stopProcess(previous);
+          let deadline: ReturnType<typeof setTimeout> | undefined;
+          try {
+            await Promise.race([
+              closed,
+              new Promise<never>((_resolve, reject) => {
+                deadline = setTimeout(
+                  () => reject(new Error("The previous API process did not stop")),
+                  5_000,
+                );
+              }),
+            ]);
+          } finally {
+            clearTimeout(deadline);
+          }
+          manifest.processes = manifest.processes.filter((child) => child.pid !== previous.pid);
+          expectedApiExits.delete(apiProcess);
+          await save(manifest);
+          apiProcess = await start(
+            ["--import", "tsx", "apps/api/src/server.ts"],
+            process.execPath,
+            { service: "API" },
+          );
+          await ready(
+            `http://127.0.0.1:${manifest.ports.api}/api/health`,
+            () => interrupted || !!serviceFailure,
+          );
+          console.log("API reloaded; demo data and sessions retained.");
+        }
         await delay(250);
       }
     }
@@ -463,6 +515,7 @@ async function run(mode: "dev" | "verify", preferred?: Manifest["ports"]) {
     console.error(error);
     process.exitCode = 1;
   } finally {
+    for (const watcher of watchers) watcher.close();
     try {
       await compose(manifest, ["logs", "--no-color", "--tail", "150"]).then((output) =>
         log.write(output),

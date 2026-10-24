@@ -4,6 +4,7 @@ import { after, before, test } from "node:test";
 import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { notificationsSchema } from "../../../packages/contracts/src/index.js";
+import { requireRunContext } from "../../../scripts/run-context.js";
 import { createApp } from "../src/app.js";
 import { connectDatabase, migrateDatabase } from "../src/database.js";
 import { deliverReminders, enqueueReminders } from "../src/reminders.js";
@@ -11,8 +12,7 @@ import * as s from "../src/schema.js";
 import { demoNow, seedDatabase } from "../src/seed.js";
 import { fixtureOnboarding, login } from "./helpers.js";
 
-const url = process.env.DATABASE_URL;
-if (!url) throw new Error("Run tests through pnpm verify");
+const { url } = await requireRunContext("verify");
 const { db, client } = connectDatabase(url);
 const app = await createApp(db, { demo: true });
 before(async () => {

@@ -22,20 +22,36 @@ async function persona(page: Page, id: string) {
 }
 const agreement = (page: Page) =>
   page.getByRole("article", { name: "Service agreement", exact: true });
-async function openJuniper(page: Page) {
-  await page.getByRole("button", { name: /Juniper Retail/ }).click();
-  await expect(page.getByRole("heading", { name: "Juniper Retail", exact: true })).toBeVisible();
+async function openOnboarding(page: Page, company: string) {
+  await page.getByRole("button", { name: new RegExp(company) }).click();
+  await expect(page.getByRole("heading", { name: company, exact: true })).toBeVisible();
 }
-async function upload(page: Page) {
-  await agreement(page).getByRole("button", { name: "Replace document" }).focus();
+async function upload(
+  page: Page,
+  title: "Service agreement" | "Sample import file" = "Service agreement",
+) {
+  const item = page.getByRole("article", { name: title, exact: true });
+  await item.getByRole("button", { name: /Upload document|Replace document/ }).focus();
   await page.keyboard.press("Enter");
   await page.keyboard.press("Tab");
-  await expect(agreement(page).getByLabel(/PDF agreement/)).toBeFocused();
-  await agreement(page)
-    .getByLabel(/PDF agreement/)
-    .setInputFiles("fixtures/service-agreement.pdf");
-  await agreement(page).getByRole("button", { name: "Submit for review" }).click();
-  await expect(agreement(page).getByText("In review", { exact: true })).toBeVisible();
+  const file = item.getByLabel(
+    title === "Service agreement" ? /PDF agreement/ : /CSV sample import/,
+  );
+  await expect(file).toBeFocused();
+  await file.setInputFiles(
+    title === "Service agreement" ? "fixtures/service-agreement.pdf" : "fixtures/sample-import.csv",
+  );
+  await item.getByRole("button", { name: "Submit for review" }).click();
+  await expect(item.getByText("In review", { exact: true })).toBeVisible();
+}
+
+async function submitDetails(page: Page, title: string, fields: Record<string, string>) {
+  const item = page.getByRole("article", { name: title, exact: true });
+  await item.getByRole("button", { name: "Add details" }).click();
+  for (const [label, value] of Object.entries(fields))
+    await item.getByLabel(label, { exact: true }).fill(value);
+  await item.getByRole("button", { name: "Submit for review" }).click();
+  await expect(item.getByText("In review", { exact: true })).toBeVisible();
 }
 
 test("unrelated customers and workspaces cannot read details or private files", async ({
@@ -64,9 +80,11 @@ test("unrelated customers and workspaces cannot read details or private files", 
   await expect(page.getByRole("button", { name: /Cedar & Co/ })).toBeVisible();
   await page.getByLabel("Status", { exact: true }).selectOption("");
   await page.getByLabel("Account manager", { exact: true }).selectOption("oliver");
+  await expect(page.getByRole("button", { name: /Cedar & Co/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Lumen Home/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Juniper Retail/ })).toHaveCount(0);
   await page.getByLabel("Account manager", { exact: true }).selectOption("");
-  await openJuniper(page);
+  await openOnboarding(page, "Juniper Retail");
   await persona(page, "owen");
   await expect(page.getByRole("heading", { name: "Beacon Supply", exact: true })).toBeVisible();
   for (const id of ["owen", "iris"]) {
@@ -82,42 +100,56 @@ test("unrelated customers and workspaces cannot read details or private files", 
   }
 });
 
-test("a document correction reaches activation and keeps its private history", async ({ page }) => {
+test("an empty checklist reaches activation through document correction and keeps its private history", async ({
+  page,
+}) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
-  await persona(page, "maya");
-  await expect(
-    agreement(page).getByText("Include the signed final page.", { exact: true }),
-  ).toBeVisible();
+  await persona(page, "owen");
+  await expect(page.getByRole("heading", { name: "Beacon Supply", exact: true })).toBeVisible();
+  await submitDetails(page, "Company details", {
+    "Legal company name": "Beacon Supply Ltd",
+    "Registered address": "42 Harbour Road, Bristol",
+  });
+  await submitDetails(page, "Launch contact", {
+    "Launch contact name": "Owen Reed",
+    "Launch contact email": "owen@beacon.test",
+  });
+  await upload(page, "Sample import file");
   await upload(page);
   await persona(page, "noah");
-  await openJuniper(page);
+  await openOnboarding(page, "Beacon Supply");
+  for (const title of ["Company details", "Sample import file", "Launch contact"]) {
+    const item = page.getByRole("article", { name: title, exact: true });
+    await item.getByRole("button", { name: "Approve", exact: true }).click();
+    await expect(item.getByText("Approved", { exact: true })).toBeVisible();
+  }
   await agreement(page).getByLabel("Correction reason").fill("Use the final signed copy.");
   await agreement(page).getByRole("button", { name: "Request correction" }).click();
   await expect(agreement(page).getByText("Needs correction", { exact: true })).toBeVisible();
-  await persona(page, "maya");
+  await persona(page, "owen");
   await expect(
     agreement(page).getByText("Use the final signed copy.", { exact: true }),
   ).toBeVisible();
   await upload(page);
   await persona(page, "noah");
-  await openJuniper(page);
+  await openOnboarding(page, "Beacon Supply");
   await agreement(page).getByRole("button", { name: "Approve", exact: true }).click();
   await expect(page.getByText("Ready to activate", { exact: true })).toBeVisible();
-  await agreement(page).getByText("3 submission revisions", { exact: true }).click();
+  await agreement(page).getByText("2 submission revisions", { exact: true }).click();
   await expect(
     agreement(page).getByText(/Needs correction by Noah Ellis. Use the final signed copy./),
   ).toBeVisible();
   await persona(page, "ada");
-  await openJuniper(page);
+  await openOnboarding(page, "Beacon Supply");
   await page.getByRole("button", { name: "Activate account", exact: true }).click();
   await expect(page.getByText("Active", { exact: true })).toBeVisible();
-  await persona(page, "maya");
+  await persona(page, "owen");
   await expect(page.getByRole("button", { name: /Replace document|Update details/ })).toHaveCount(
     0,
   );
-  const response = await page.request.get("/api/onboardings/juniper");
+  const response = await page.request.get("/api/onboardings/beacon");
   const detail = detailSchema.assert(await response.json());
   const current = detail.revisions.find(
     (item) =>
@@ -127,6 +159,11 @@ test("a document correction reaches activation and keeps its private history", a
   const file = await page.request.get(`/api/revisions/${current?.id}/file`);
   expect(file.status()).toBe(200);
   expect(await file.body()).toEqual(await readFile("fixtures/service-agreement.pdf"));
+  const csv = detail.revisions.find((item) => item.fileName === "sample-import.csv");
+  expect(csv).toBeDefined();
+  const csvFile = await page.request.get(`/api/revisions/${csv?.id}/file`);
+  expect(csvFile.status()).toBe(200);
+  expect(await csvFile.body()).toEqual(await readFile("fixtures/sample-import.csv"));
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   expect(errors).toEqual([]);

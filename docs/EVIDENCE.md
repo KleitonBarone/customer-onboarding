@@ -6,6 +6,24 @@ or business-impact claims.
 
 ## Reproduce
 
+Review fixes verified on **2026-10-23** add six environment regressions alongside
+the 20 API/domain tests and two browser journeys. Preparation and database tests
+initially opened connections to an unverified target; the regression probes now
+observe zero connections. URL mismatch, wrong run mode and stale owner checks
+also reject before connection. Owner-filter fixtures now use distinct membership
+and user IDs, and the browser asserts the two expected accounts.
+
+The complete browser workflow starts with Beacon's empty checklist, submits all
+four requirement types, requests and resolves a correction, and activates the
+account. Both PDF and CSV downloads match the submitted bytes.
+
+An API source-change probe retained the exact stored submission, activity,
+session and database container through two reloads. Terminating that API with
+exit code 0 triggered automatic teardown and freed all three service ports.
+`pnpm audit` reports zero advisories after a scoped esbuild override and updates
+to fast-uri 3.1.9 and 4.2.3. Drizzle schema generation still loads successfully
+and reports no schema changes.
+
 Use the pinned tools in the [README](../README.md), then run:
 
 ```sh

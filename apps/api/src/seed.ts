@@ -76,7 +76,12 @@ export async function seedDatabase(db: Pick<Database, "transaction">, storageRoo
     await tx
       .insert(s.memberships)
       .values(
-        personaSeeds.map(({ id, workspaceId, role }) => ({ id, userId: id, workspaceId, role })),
+        personaSeeds.map((persona) => ({
+          id: "membershipId" in persona ? persona.membershipId : persona.id,
+          userId: persona.id,
+          workspaceId: persona.workspaceId,
+          role: persona.role,
+        })),
       )
       .onConflictDoNothing();
     await tx

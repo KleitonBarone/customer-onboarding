@@ -1,14 +1,13 @@
 import assert from "node:assert/strict";
 import { readdir } from "node:fs/promises";
 import { after, before, test } from "node:test";
+import { requireRunContext } from "../../../scripts/run-context.js";
 import { createApp } from "../src/app.js";
 import { connectDatabase, migrateDatabase } from "../src/database.js";
 import { seedDatabase } from "../src/seed.js";
 import { detail, fixtureOnboarding, login, upload } from "./helpers.js";
 
-const url = process.env.DATABASE_URL;
-const storageRoot = process.env.STORAGE_ROOT;
-if (!url || !storageRoot) throw new Error("Run tests through pnpm verify");
+const { url, storageRoot } = await requireRunContext("verify");
 const { db, client } = connectDatabase(url);
 const app = await createApp(db, { demo: true, storageRoot });
 before(async () => {

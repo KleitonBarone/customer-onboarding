@@ -5,13 +5,13 @@ import {
   detailSchema,
   onboardingsSchema,
 } from "../../../packages/contracts/src/index.js";
+import { requireRunContext } from "../../../scripts/run-context.js";
 import { createApp } from "../src/app.js";
 import { connectDatabase, migrateDatabase } from "../src/database.js";
 import { seedDatabase } from "../src/seed.js";
 import { fixtureOnboarding } from "./helpers.js";
 
-const url = process.env.DATABASE_URL;
-if (!url) throw new Error("Run tests through pnpm verify");
+const { url } = await requireRunContext("verify");
 const { db, client } = connectDatabase(url);
 const app = await createApp(db, { demo: true });
 before(async () => {

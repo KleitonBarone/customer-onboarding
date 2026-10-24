@@ -105,6 +105,7 @@ export async function createApp(
     return db
       .select({
         id: s.memberships.id,
+        userId: s.users.id,
         workspaceId: s.workspaces.id,
         name: s.users.name,
         role: s.memberships.role,

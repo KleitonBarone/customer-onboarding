@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { onboardingsSchema } from "../../../packages/contracts/src/index.js";
+import { onboardingsSchema, personasSchema } from "../../../packages/contracts/src/index.js";
+import { requireRunContext } from "../../../scripts/run-context.js";
 import { createApp } from "../src/app.js";
 import { connectDatabase, migrateDatabase } from "../src/database.js";
 import { seedDatabase } from "../src/seed.js";
 import { fixtureOnboarding, login } from "./helpers.js";
 
-const url = process.env.DATABASE_URL;
-if (!url) throw new Error("Run tests through pnpm verify");
+const { url } = await requireRunContext("verify");
 const { db, client } = connectDatabase(url);
 const app = await createApp(db, { demo: true });
 before(async () => {
@@ -41,7 +41,15 @@ test("queue filters agree with derived states and stay within customer/workspace
   const correction = await queue(manager, "search=Juniper");
   assert.equal(correction[0]?.ageDays, 5);
   assert.equal(correction[0]?.nextAction, "Customer to correct service agreement");
-  assert.ok((await queue(manager, "ownerId=oliver")).every((item) => item.ownerId === "oliver"));
+  const personas = personasSchema.assert((await app.inject("/api/demo/personas")).json());
+  const owner = personas.find((persona) => persona.name === "Oliver Grant");
+  assert.ok(owner);
+  assert.equal(owner.userId, "oliver");
+  assert.notEqual(owner.id, owner.userId);
+  assert.deepEqual(
+    (await queue(manager, `ownerId=${owner.userId}`)).map((item) => item.id).sort(),
+    ["cedar", "lumen"],
+  );
   assert.deepEqual(await queue(manager, "search=Westhaven"), []);
   assert.deepEqual(await queue(await login(app, "maya"), "search=Cedar"), []);
   assert.deepEqual(await queue(await login(app, "iris"), "search=Juniper"), []);

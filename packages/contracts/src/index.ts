@@ -12,6 +12,7 @@ export const actorSchema = type({
 export type Actor = typeof actorSchema.infer;
 export const personaSchema = type({
   id: "string",
+  userId: "string",
   workspaceId: "string",
   name: "string",
   role: roleSchema,

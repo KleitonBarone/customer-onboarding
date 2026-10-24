@@ -26,7 +26,7 @@ export function Queue({
   error?: string;
   filters: typeof queueInput.infer;
   setFilters: (input: typeof queueInput.infer) => void;
-  owners: Pick<typeof personaSchema.infer, "id" | "name">[];
+  owners: Pick<typeof personaSchema.infer, "userId" | "name">[];
   onOpen: (id: string) => void;
   onRetry: () => void;
 }) {
@@ -82,7 +82,7 @@ export function Queue({
           >
             <option value="">All account managers</option>
             {owners.map((owner) => (
-              <option key={owner.id} value={owner.id}>
+              <option key={owner.userId} value={owner.userId}>
                 {owner.name}
               </option>
             ))}

@@ -2,6 +2,9 @@ packages:
   - apps/*
 allowBuilds:
   esbuild: true
+overrides:
+  # The deprecated loader still requests esbuild 0.18; keep its transform API patched.
+  '@esbuild-kit/core-utils>esbuild': '0.25.12'
 minimumReleaseAgeExclude:
   - '@tanstack/query-core@5.104.5'
   - '@tanstack/react-query@5.104.5'

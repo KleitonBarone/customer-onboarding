@@ -1,16 +1,14 @@
+import { requireRunContext } from "../../../scripts/run-context.js";
 import { createApp } from "./app.js";
 import { connectDatabase } from "./database.js";
 
-const url = process.env.DATABASE_URL;
-if (!url) throw new Error("DATABASE_URL is required. Use pnpm dev or pnpm verify.");
+const { url, storageRoot } = await requireRunContext();
 const { db, client } = connectDatabase(url);
-if (process.env.APP_ENV !== "demo")
-  throw new Error("This portfolio app requires APP_ENV=demo and local services.");
 const app = await createApp(db, {
   demo: true,
   logger: true,
   reminders: true,
-  storageRoot: process.env.STORAGE_ROOT,
+  storageRoot,
 });
 app.addHook("onClose", async () => client.end());
 await app.listen({ host: "127.0.0.1", port: Number(process.env.API_PORT ?? 4311) });

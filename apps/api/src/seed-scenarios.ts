@@ -8,6 +8,7 @@ import * as s from "./schema.js";
 export const additionalPersonas = [
   {
     id: "oliver",
+    membershipId: "northstar-oliver",
     name: "Oliver Grant",
     email: "oliver@example.test",
     workspaceId: "northstar",

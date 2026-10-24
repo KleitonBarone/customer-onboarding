@@ -46,8 +46,8 @@ Production storage would need reconciliation, scanning, and retention rules.
 ## Verify the complete scenario
 
 The same lifecycle command provisions an empty PostgreSQL database, migrates and
-seeds it, checks strict types and lint, runs 20 focused tests, builds both apps,
-and runs two Chromium journeys. Tests cover scope, private files, stale/concurrent
+seeds it, checks strict types and lint, runs API/domain and environment tests,
+builds both apps, and runs two Chromium journeys. Tests cover scope, private files, stale/concurrent
 review, activation races, reminders, and a correction reaching activation. Browser
 checks include keyboard input, filter clearing, request recovery, and narrow layout.
 

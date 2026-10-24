@@ -1,12 +1,12 @@
+import { requireRunContext } from "../../../scripts/run-context.js";
 import { connectDatabase, migrateDatabase } from "./database.js";
 import { seedDatabase } from "./seed.js";
 
-const url = process.env.DATABASE_URL;
-if (!url) throw new Error("DATABASE_URL is required");
+const { url, storageRoot } = await requireRunContext();
 const { db, client } = connectDatabase(url);
 try {
   await migrateDatabase(db);
-  await seedDatabase(db, process.env.STORAGE_ROOT);
+  await seedDatabase(db, storageRoot);
 } finally {
   await client.end();
 }
