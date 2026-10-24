@@ -23,10 +23,12 @@ in progress.
 
 API and shared TypeScript source changes restart the directly owned API process
 after a short debounce. The run keeps its database, uploads, ports and sessions.
-Watchers close during shutdown. Setup commands may exit successfully; API, web
-and WSL keep-alive processes are monitored as services, so any unexpected service
-exit, including code 0, tears down the run. Invalid backend source that cannot
-restart also fails the run with diagnostics.
+Watchers close during shutdown. Setup commands may exit successfully; API, web,
+the database monitor and WSL keep-alive processes are monitored as services.
+A recorded `docker wait` process watches the exact database container after
+startup. A database exit or unexpected monitor/service exit, including code 0,
+tears down the run. Invalid backend source that cannot restart also fails the
+run with diagnostics.
 
 On Windows, a recorded WSL `sleep` process keeps the distro active while the
 database is needed. Cleanup stops it after removing the run's database resources.
@@ -119,3 +121,11 @@ server-side customer/workspace checks. File validation checks the expected
 extension and sample content signature/encoding; malware scanning is outside the
 demo. Replacement failures remove their newly written file. Revision history
 retains earlier successful submissions and their review reasons.
+
+Uploads consume the complete multipart body before saving a file or revision.
+Extra parts, oversized files and malformed bodies reject the whole submission.
+The pnpm patch in `patches/@fastify__busboy@3.2.3.patch` handles errors on parts
+discarded by the parser's limits. The parser still reports malformed-body errors
+to the request; the discarded part's duplicate error no longer terminates Node.
+Keep this patch until an upstream release covers that case. API regressions check
+extra fields, extra files and a truncated trailing part without persistent writes.

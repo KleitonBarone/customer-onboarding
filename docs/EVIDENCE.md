@@ -24,6 +24,19 @@ exit code 0 triggered automatic teardown and freed all three service ports.
 to fast-uri 3.1.9 and 4.2.3. Drizzle schema generation still loads successfully
 and reports no schema changes.
 
+Follow-up fixes verified on **2026-10-24** add three multipart rejection
+regressions. Before the fix, extra fields/files returned 200 and a truncated
+trailing part raised an uncaught stream error. The tests now reject these bodies
+with a client error, preserve the full onboarding and upload directory, and
+confirm the API remains healthy. Real HTTP probes also rejected a truncated
+first file and accepted a valid upload after all failures.
+
+A database-exit probe initially left its manifest running, web returning 200,
+and API health returning 500. With the recorded database watcher, stopping the
+owned container marked the run cleaned and removed its processes, containers
+and uploads. The full verification passed with six environment tests,
+23 API/domain tests and two browser journeys; the dependency audit remained clear.
+
 Use the pinned tools in the [README](../README.md), then run:
 
 ```sh

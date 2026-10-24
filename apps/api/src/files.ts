@@ -1,13 +1,29 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { MultipartFile } from "@fastify/multipart";
 import { and, eq } from "drizzle-orm";
+import type { FastifyRequest } from "fastify";
 import type { Actor } from "../../../packages/contracts/src/index.js";
 import { ApiError, onboardingFor } from "./access.js";
 import type { Database } from "./database.js";
 import * as s from "./schema.js";
 import { submitContent } from "./submissions.js";
+
+// Buffer the single bounded file, then finish parsing before any persistent write.
+// Limits and malformed trailing parts must reject the whole submission.
+export async function readUpload(request: FastifyRequest) {
+  let file: { filename: string; bytes: Buffer } | undefined;
+  try {
+    for await (const part of request.parts()) {
+      if (part.type === "file") file = { filename: part.filename, bytes: await part.toBuffer() };
+    }
+  } catch (error) {
+    if (error instanceof Error && "statusCode" in error) throw error;
+    throw new ApiError(400, "The upload is incomplete or invalid. Upload one complete document.");
+  }
+  if (!file) throw new ApiError(400, "Choose a document to upload.");
+  return file;
+}
 
 export async function uploadFile(
   db: Database,
@@ -15,7 +31,7 @@ export async function uploadFile(
   onboardingId: string,
   requirementId: string,
   version: number,
-  file: MultipartFile,
+  file: Awaited<ReturnType<typeof readUpload>>,
   storageRoot: string,
   now: Date,
 ) {
@@ -29,7 +45,7 @@ export async function uploadFile(
       and(eq(s.requirements.id, requirementId), eq(s.requirements.onboardingId, onboardingId)),
     );
   if (!requirement) throw new ApiError(404, "Requirement not found.");
-  const bytes = await file.toBuffer();
+  const { bytes } = file;
   const fileName = file.filename
     .replace(/^.*[\\/]/, "")
     .replace(/\p{Cc}/gu, "")

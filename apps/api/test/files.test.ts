@@ -114,3 +114,35 @@ test("private downloads are authorized and failed replacements leave no orphan f
   );
   assert.deepEqual(await readdir(storageRoot), before);
 });
+
+for (const ending of ["field", "file", "truncated"] as const) {
+  test(`an extra ${ending} multipart part is rejected without saving a revision or file`, {
+    timeout: 5_000,
+  }, async () => {
+    const id = `multipart-${ending}`;
+    await fixtureOnboarding(db, id);
+    const cookie = await login(app, "maya");
+    const before = await detail(app, cookie, id);
+    const files = (await readdir(storageRoot)).sort();
+    const boundary = "multipart-rejection-boundary";
+    const payload = Buffer.concat([
+      Buffer.from(
+        `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="agreement.pdf"\r\nContent-Type: application/pdf\r\n\r\n`,
+      ),
+      pdf,
+      Buffer.from(
+        `\r\n--${boundary}\r\nContent-Disposition: form-data; name="extra"${ending === "file" ? '; filename="second.pdf"' : ""}\r\n\r\nextra\r\n--${boundary}${ending === "truncated" ? "broken" : "--\r\n"}`,
+      ),
+    ]);
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/onboardings/${id}/requirements/${id}-agreement/files?version=0`,
+      headers: { cookie, "content-type": `multipart/form-data; boundary=${boundary}` },
+      payload,
+    });
+    assert.ok(response.statusCode >= 400 && response.statusCode < 500, response.body);
+    assert.deepEqual(await detail(app, cookie, id), before);
+    assert.deepEqual((await readdir(storageRoot)).sort(), files);
+    assert.equal((await app.inject("/api/health")).statusCode, 200);
+  });
+}

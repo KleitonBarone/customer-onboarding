@@ -1,0 +1,11 @@
+diff --git a/lib/types/multipart.js b/lib/types/multipart.js
+index 00e0c0a8deb762669f86b8ea7f69c0031705b854..6b6051fd8b9e4e94f58f27d582ed396241fb007a 100644
+--- a/lib/types/multipart.js
++++ b/lib/types/multipart.js
+@@ -305,3 +305,6 @@
+ function skipPart (part) {
++  // The parser reports malformed bodies separately. Discarded parts can still
++  // emit their own error after a limit, so they must have an error listener.
++  part.on('error', function () {})
+   part.resume()
+ }

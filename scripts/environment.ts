@@ -410,6 +410,15 @@ async function run(mode: "dev" | "verify", preferred?: Manifest["ports"]) {
     console.log((await compose(manifest, ["up", "-d", "--wait", "--wait-timeout", "60"])).trim());
     manifest.databaseContainerId = (await compose(manifest, ["ps", "-q", "database"])).trim();
     await save(manifest);
+    // A recorded docker wait process ends when this exact container stops or
+    // Docker becomes unavailable. Its exit uses the same service cleanup path.
+    await start(
+      windows
+        ? ["-d", "Ubuntu", "--exec", "docker", "wait", manifest.databaseContainerId]
+        : ["wait", manifest.databaseContainerId],
+      windows ? "wsl.exe" : "docker",
+      { service: "Database monitor" },
+    );
     if (interrupted) return;
     await invoke(["exec", "tsx", "apps/api/src/prepare.ts"]);
     if (process.env.VERIFY_FAIL_AT === "after-database") throw new Error("Controlled test failure");

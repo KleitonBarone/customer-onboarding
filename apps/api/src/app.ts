@@ -16,7 +16,7 @@ import {
 import { ApiError, actorFor, hashToken, onboardingFor } from "./access.js";
 import { changeActivation } from "./activation.js";
 import type { Database } from "./database.js";
-import { downloadFile, uploadFile } from "./files.js";
+import { downloadFile, readUpload, uploadFile } from "./files.js";
 import { getOnboarding } from "./queries.js";
 import { listOnboardings } from "./queue.js";
 import { advanceDemoTime, demoTime, listNotifications, runReminders } from "./reminders.js";
@@ -212,8 +212,7 @@ export async function createApp(
       if (version instanceof type.errors)
         throw new ApiError(400, "A current requirement version is required.");
       if (!options.storageRoot) throw new ApiError(503, "Local file storage is unavailable.");
-      const file = await request.file();
-      if (!file) throw new ApiError(400, "Choose a document to upload.");
+      const file = await readUpload(request);
       return uploadFile(
         db,
         actor,
