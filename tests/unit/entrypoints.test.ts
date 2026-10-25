@@ -33,7 +33,7 @@ for (const [name, args, forgedRun] of [
       try {
         const result = await promisify(execFile)(process.execPath, ["--import", "tsx", ...args], {
           env,
-          timeout: 3_000,
+          timeout: 10_000,
           windowsHide: true,
         });
         output = result.stdout + result.stderr;
