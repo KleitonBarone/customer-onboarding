@@ -36,6 +36,8 @@ The runner selects an explicit unused Docker subnet, so exhausted automatic
 address pools do not require pruning other projects' networks or changing the
 daemon. It never shuts down WSL.
 
+## Verification coverage
+
 `pnpm verify` uses independent available ports and a fresh database. It applies
 migrations/seeds, runs `pnpm check`, starts the built API and Vite preview, verifies
 the web/API proxy, and tears down in `finally`. `pnpm check` runs lint, strict
@@ -48,6 +50,23 @@ before connecting. Database tests additionally require verification mode, so
 `pnpm test` cannot write to an arbitrary inherited `DATABASE_URL` or the interactive
 demo. `pnpm test:unit` runs the ownership and service-exit regressions independently
 of Docker and PostgreSQL; `pnpm check` includes them before database tests.
+
+The suite covers:
+
+- API/domain behavior: session and account isolation, private downloads, malformed
+  uploads without side effects, correction history, stale/concurrent decisions,
+  activation races, queue filters/pagination, reset guards and reminder recovery.
+- Environment guards: unowned database rejection, URL/mode/owner mismatches and
+  unexpected service exits.
+- Browser behavior: a complete empty-checklist submission through correction and
+  activation, exact PDF/CSV downloads, denied access, persona switching, keyboard
+  input, queue recovery and narrow layouts.
+
+Fixtures start at 2026-10-15 12:00 UTC. Northstar has five accounts spanning draft,
+review, correction, ready and active states; Elsewhere tests provider isolation.
+[GitHub Actions](https://github.com/KleitonBarone/customer-onboarding/actions)
+runs the same verification on Linux. Results use synthetic data and establish
+correctness for these scenarios, with no production or performance claims.
 
 The runner records identities and task-owned paths in `.local/runs/<run-id>/`.
 API and web processes are launched directly so their recorded identities survive
@@ -79,9 +98,8 @@ Failed browser checks retain screenshots and traces in `.local/reports/browser/`
 the next run replaces that browser output. CI uploads diagnostics for three days.
 
 For interactive inspection, keep `pnpm dev` running and open its reported URL in
-the thread's collaborative browser. If that browser is unavailable, Playwright
-can inspect the same real local services with `PLAYWRIGHT_BROWSERS_PATH` pointing
-to this repository's `.local/browsers/`. Do not use another application's preview.
+a browser. Playwright can inspect the same local services using the browser path
+configured above.
 
 Each run has rotating service logs bounded to two 5 MiB files. Successful-run logs
 are discarded. The latest failed run's error and service log replace prior files
@@ -93,34 +111,11 @@ To exercise failure cleanup, set `VERIFY_FAIL_AT` to `before-database` or
 The command must fail and leave its manifest marked `cleaned`. A normal demo
 shutdown through `env:clean` must free all three ports and the WSL keep-alive.
 
-## Migrations and application boundaries
-
-The API checks reminders at startup and every five seconds, with one worker tick
-at a time and timer cleanup on close. PostgreSQL stores pending outbox rows and a
-unique `(onboarding, kind, UTC day)` key. Workers lock pending rows with
-`SKIP LOCKED`; inbox insertion and delivery acknowledgement share a transaction.
-Restart tests launch two separate Node processes against the same verification DB.
-Per-workspace demo clocks persist in PostgreSQL. Account managers can advance
-their session workspace by exactly 24 hours. Authentication uses wall-clock time.
-The inbox contains the latest 50 accessible messages. This is local delivery;
-external email would need its own provider idempotency and retry policy.
+## Migrations and dependency maintenance
 
 Edit `apps/api/src/schema.ts`, then run `pnpm db:generate`. Commit generated SQL
 and metadata with the behavior change. New environments apply migrations through
 `apps/api/src/prepare.ts`; seeding is idempotent and uses fixed identities.
-
-The API binds to loopback and requires `APP_ENV=demo`. Sessions use opaque,
-HttpOnly cookies backed by hashed tokens. Customer and workspace checks happen
-on the server for reads and writes. The local persona picker, synthetic clock,
-and local files are explicit demo limits; public hosting and production identity
-are outside this project.
-
-PDF agreements and UTF-8 CSV samples are limited to 2 MiB. Files use opaque local
-storage identifiers; every current or historical download goes through the same
-server-side customer/workspace checks. File validation checks the expected
-extension and sample content signature/encoding; malware scanning is outside the
-demo. Replacement failures remove their newly written file. Revision history
-retains earlier successful submissions and their review reasons.
 
 Uploads consume the complete multipart body before saving a file or revision.
 Extra parts, oversized files and malformed bodies reject the whole submission.

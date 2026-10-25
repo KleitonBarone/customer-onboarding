@@ -47,9 +47,10 @@ Production storage would need reconciliation, scanning, and retention rules.
 
 The same lifecycle command provisions an empty PostgreSQL database, migrates and
 seeds it, checks strict types and lint, runs API/domain and environment tests,
-builds both apps, and runs two Chromium journeys. Tests cover scope, private files, stale/concurrent
-review, activation races, reminders, and a correction reaching activation. Browser
-checks include keyboard input, filter clearing, request recovery, and narrow layout.
+builds both apps, and runs two Chromium journeys. Tests cover scope, private files,
+stale/concurrent review, activation races, reminders, and a correction reaching
+activation. Browser checks include keyboard input, filter clearing, request
+recovery, and narrow layout.
 
 Cleanup records process identity and resource ownership from startup. It removes
 only that run's services, database volume, network, and uploads, including recovery
@@ -57,6 +58,6 @@ after a forced stop. This made repeated end-to-end inspection practical without
 leaving a stack running between delivery PRs.
 
 These are author-performed local results. There are no real customer outcomes,
-load-test claims, or measured business savings. See [evidence](EVIDENCE.md) for
-the exact dataset and delivery records, and [architecture](ARCHITECTURE.md) for
-the boundaries and limits.
+load-test claims, or measured business savings. See
+[verification coverage](DEVELOPMENT.md#verification-coverage) for the checks and
+fixtures, and [architecture](ARCHITECTURE.md) for the boundaries and limits.

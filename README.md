@@ -60,9 +60,8 @@ pnpm env:status
 Verification creates separate database, storage, and ports; applies migrations and
 fixtures; runs lint, strict types, API/domain and environment regression tests,
 builds, and two Chromium journeys; then removes its services. CI runs the same
-command on Linux. Failed
-browser checks retain bounded diagnostics. Browser installation is reused under
-`.local/browsers/`.
+command on Linux. Failed browser checks retain bounded diagnostics. Browser
+installation is reused under `.local/browsers/`.
 
 Every development session starts with fresh disposable data. In a second
 terminal, `pnpm demo:reset` verifies the recorded process and database identity
@@ -86,8 +85,9 @@ malware scanning, real identity, external email, and public hosting are outside
 this demo. Local verification establishes these scenarios; it provides no
 customer adoption or business-impact evidence.
 
-See [measured results](docs/EVIDENCE.md), [delivery PRs](docs/DELIVERY.md), and the
-[completed plan](PLAN.md).
+See [architecture](docs/ARCHITECTURE.md) for the access model, workflow transactions,
+and storage tradeoffs, and [verification coverage](docs/DEVELOPMENT.md#verification-coverage)
+for the checks behind the demo.
 
 ## License
 
