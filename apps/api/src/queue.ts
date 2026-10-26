@@ -14,23 +14,9 @@ import {
   sql,
 } from "drizzle-orm";
 import type { Actor, queueInput } from "../../../packages/contracts/src/index.js";
-import { onboardingStatus } from "../../../packages/contracts/src/workflow.js";
+import { nextAction, onboardingStatus } from "../../../packages/contracts/src/workflow.js";
 import type { Database } from "./database.js";
 import * as s from "./schema.js";
-
-function nextAction(
-  status: ReturnType<typeof onboardingStatus>,
-  requirements: (typeof s.requirements.$inferSelect)[],
-) {
-  if (status === "active") return "Account active";
-  if (status === "ready") return "Account manager to activate";
-  const correction = requirements.find((item) => item.state === "changes_requested");
-  if (correction) return `Customer to correct ${correction.title.toLowerCase()}`;
-  const waiting = requirements.filter((item) => item.state === "submitted").length;
-  return waiting
-    ? `Reviewer to review ${waiting} ${waiting === 1 ? "submission" : "submissions"}`
-    : "Customer to submit missing information";
-}
 
 export async function listOnboardings(
   db: Database,

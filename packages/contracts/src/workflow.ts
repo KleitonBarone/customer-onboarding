@@ -25,3 +25,17 @@ export function onboardingStatus(
   if (canActivate(requirements)) return "ready";
   return onboarding.startedAt ? "in_progress" : "draft";
 }
+
+export function nextAction(
+  status: ReturnType<typeof onboardingStatus>,
+  requirements: readonly Pick<OnboardingDetail["requirements"][number], "state" | "title">[],
+) {
+  if (status === "active") return "Account active";
+  if (status === "ready") return "Account manager to activate";
+  const correction = requirements.find((item) => item.state === "changes_requested");
+  if (correction) return `Customer to correct ${correction.title.toLowerCase()}`;
+  const waiting = requirements.filter((item) => item.state === "submitted").length;
+  return waiting
+    ? `Reviewer to review ${waiting} ${waiting === 1 ? "submission" : "submissions"}`
+    : "Customer to submit missing information";
+}

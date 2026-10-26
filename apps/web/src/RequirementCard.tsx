@@ -5,7 +5,7 @@ import {
   type OnboardingDetail,
   submissionInput,
 } from "../../../packages/contracts/src/index.js";
-import { request } from "./api.js";
+import { documentUrl, request } from "./api.js";
 
 const states = {
   missing: "Not submitted",
@@ -213,7 +213,11 @@ export function RequirementCard({
       {revision && (
         <div className="submission-preview">
           {revision.fileName ? (
-            <a className="document-link" href={`/api/revisions/${revision.id}/file`}>
+            <a
+              className="document-link"
+              href={documentUrl(revision.id)}
+              download={revision.fileName}
+            >
               Download {revision.fileName}
             </a>
           ) : (
@@ -293,7 +297,9 @@ export function RequirementCard({
                 <li key={item.id}>
                   <strong>Revision {item.number}</strong>
                   {item.fileName ? (
-                    <a href={`/api/revisions/${item.id}/file`}>Download revision {item.number}</a>
+                    <a href={documentUrl(item.id)} download={item.fileName}>
+                      Download revision {item.number}
+                    </a>
                   ) : (
                     <p>{item.content}</p>
                   )}

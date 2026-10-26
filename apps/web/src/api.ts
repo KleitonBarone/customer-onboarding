@@ -8,6 +8,9 @@ import {
   type queueInput,
 } from "../../../packages/contracts/src/index.js";
 
+export const isBrowserDemo = false;
+export const documentUrl = (id: string) => `/api/revisions/${encodeURIComponent(id)}/file`;
+
 export async function request(path: string, init?: RequestInit): Promise<unknown> {
   const response = await fetch(`/api${path}`, {
     ...init,

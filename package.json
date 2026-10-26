@@ -10,6 +10,11 @@
   },
   "scripts": {
     "dev": "tsx scripts/environment.ts dev",
+    "dev:demo": "pnpm --filter @onboarding/web dev:demo",
+    "build:demo": "pnpm --filter @onboarding/web build:demo",
+    "preview:demo": "pnpm --filter @onboarding/web preview:demo",
+    "test:demo": "playwright test --config tests/demo.config.ts",
+    "verify:demo": "pnpm build:demo && pnpm test:demo",
     "verify": "tsx scripts/environment.ts verify",
     "env:doctor": "tsx scripts/environment.ts doctor",
     "env:status": "tsx scripts/environment.ts status",

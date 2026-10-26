@@ -1,60 +1,16 @@
+import {
+  demoNow,
+  personaSeeds,
+  requirementSeeds,
+  scenarioAccounts,
+  workspaceSeeds,
+} from "../../../packages/contracts/src/demo.js";
+
+export { demoNow, personaSeeds, requirementSeeds } from "../../../packages/contracts/src/demo.js";
+
 import type { Database } from "./database.js";
 import * as s from "./schema.js";
-import { additionalPersonas, scenarioAccounts, seedScenario } from "./seed-scenarios.js";
-
-export const demoNow = "2026-10-15T12:00:00.000Z";
-export const personaSeeds = [
-  {
-    id: "ada",
-    name: "Ada Wells",
-    email: "ada@example.test",
-    workspaceId: "northstar",
-    role: "manager",
-  },
-  {
-    id: "noah",
-    name: "Noah Ellis",
-    email: "noah@example.test",
-    workspaceId: "northstar",
-    role: "reviewer",
-  },
-  {
-    id: "maya",
-    name: "Maya Chen",
-    email: "maya@example.test",
-    workspaceId: "northstar",
-    role: "customer",
-  },
-  {
-    id: "owen",
-    name: "Owen Reed",
-    email: "owen@example.test",
-    workspaceId: "northstar",
-    role: "customer",
-  },
-  {
-    id: "iris",
-    name: "Iris Park",
-    email: "iris@example.test",
-    workspaceId: "elsewhere",
-    role: "manager",
-  },
-  {
-    id: "leo",
-    name: "Leo Silva",
-    email: "leo@example.test",
-    workspaceId: "elsewhere",
-    role: "customer",
-  },
-  ...additionalPersonas,
-] as const;
-
-export const requirementSeeds = [
-  { kind: "company", title: "Company details" },
-  { kind: "agreement", title: "Service agreement" },
-  { kind: "import", title: "Sample import file" },
-  { kind: "contact", title: "Launch contact" },
-] as const;
+import { seedScenario } from "./seed-scenarios.js";
 
 export async function seedDatabase(db: Pick<Database, "transaction">, storageRoot?: string) {
   await db.transaction(async (tx) => {
@@ -64,10 +20,7 @@ export async function seedDatabase(db: Pick<Database, "transaction">, storageRoo
       .onConflictDoNothing();
     await tx
       .insert(s.workspaces)
-      .values([
-        { id: "northstar", name: "Northstar Analytics" },
-        { id: "elsewhere", name: "Elsewhere Metrics" },
-      ])
+      .values([...workspaceSeeds])
       .onConflictDoNothing();
     await tx
       .insert(s.users)

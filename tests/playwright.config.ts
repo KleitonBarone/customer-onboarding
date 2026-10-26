@@ -6,7 +6,7 @@ process.env.PLAYWRIGHT_BROWSERS_PATH ??= path.resolve(".local/browsers");
 
 export default defineConfig({
   testDir: ".",
-  testMatch: "*.spec.ts",
+  testMatch: "workflow.spec.ts",
   workers: 1,
   fullyParallel: false,
   forbidOnly: !!process.env.CI,

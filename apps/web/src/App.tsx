@@ -6,7 +6,7 @@ import {
   queueInput,
 } from "../../../packages/contracts/src/index.js";
 import { ActivationPanel } from "./ActivationPanel.js";
-import { api, request } from "./api.js";
+import { api, isBrowserDemo, request } from "./api.js";
 import { Notifications } from "./Notifications.js";
 import { Queue } from "./Queue.js";
 import { RequirementCard } from "./RequirementCard.js";
@@ -103,7 +103,8 @@ export function App() {
         </nav>
         <div className="sidebar-note">
           <span className="live-dot" />
-          Local demonstration<p>Fictional companies. Real workflow.</p>
+          {isBrowserDemo ? "Browser demonstration" : "Local demonstration"}
+          <p>Fictional companies. Real workflow.</p>
         </div>
       </aside>
       <div className="main-shell">
@@ -130,6 +131,23 @@ export function App() {
           </label>
         </header>
         <main id="main-content" tabIndex={-1}>
+          {isBrowserDemo && (
+            <section className="demo-banner" aria-label="About this demo">
+              <div>
+                <strong>Interactive browser demo</strong>
+                <p>
+                  Changes and uploads stay in this tab. Refresh or reset to restore the examples.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => window.location.assign("/")}
+              >
+                Reset demo
+              </button>
+            </section>
+          )}
           {(login.error || session.error || personas.error) && (
             <p role="alert" className="error">
               {(login.error ?? session.error ?? personas.error)?.message}

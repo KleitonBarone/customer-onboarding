@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Actor } from "../../../packages/contracts/src/index.js";
-import { api, request } from "./api.js";
+import { api, isBrowserDemo, request } from "./api.js";
 
 export function Notifications({ actor }: { actor: Actor }) {
   const queries = useQueryClient();
@@ -25,7 +25,7 @@ export function Notifications({ actor }: { actor: Actor }) {
     <section className="notification-panel" aria-label="Local notification inbox">
       <div className="panel-heading">
         <h2>Notification inbox</h2>
-        <span>Local demo</span>
+        <span>{isBrowserDemo ? "Browser demo" : "Local demo"}</span>
       </div>
       <p>Reminders for customer action appear here once per UTC day. No email is sent.</p>
       <div className="demo-clock">
@@ -61,7 +61,10 @@ export function Notifications({ actor }: { actor: Actor }) {
         <p>No reminders for this account yet.</p>
       )}
       <small>
-        The processor checks every five seconds. Shows the latest 50 messages you can access.
+        {isBrowserDemo
+          ? "Reminders update as you explore and advance the demo date."
+          : "The processor checks every five seconds."}{" "}
+        Shows the latest 50 messages you can access.
       </small>
     </section>
   );
