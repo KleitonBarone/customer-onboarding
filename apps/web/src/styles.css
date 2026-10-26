@@ -69,6 +69,8 @@ button:disabled {
   outline-offset: 3px;
 }
 .notification-panel {
+  display: grid;
+  gap: 20px;
   background: #fff;
   border: 1px solid #dce5ed;
   border-radius: 10px;
@@ -97,24 +99,68 @@ button:disabled {
   flex-shrink: 0;
 }
 .notification-panel p {
-  margin-bottom: 12px;
+  margin: 0;
+}
+.notification-header {
+  display: grid;
+  gap: 6px;
+}
+.notification-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.notification-heading > span {
+  color: #597087;
+  font-size: 12px;
+}
+.notification-description,
+.notification-empty {
+  max-width: 75ch;
+  color: #597087;
+  font-size: 14px;
 }
 .demo-clock {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
-  margin: 16px 0;
+  justify-content: space-between;
+  gap: 12px 20px;
+  padding: 16px 0;
+  border-block: 1px solid #e7edf3;
+  font-size: 14px;
 }
 .notifications {
+  margin: 0;
   padding: 0;
   list-style: none;
   max-height: 300px;
   overflow: auto;
 }
 .notifications li {
-  padding: 12px 0;
-  border-top: 1px solid #dce5ed;
+  display: grid;
+  gap: 6px;
+  padding: 16px 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+.notifications li:first-child {
+  padding-top: 0;
+}
+.notifications li:last-child {
+  padding-bottom: 0;
+}
+.notifications :where(li + li) {
+  border-top: 1px solid #e7edf3;
+}
+.notification-date,
+.notification-note {
+  color: #597087;
+}
+.notification-note {
+  max-width: 80ch;
 }
 a {
   color: inherit;
@@ -703,6 +749,13 @@ small {
   }
 }
 @media (max-width: 700px) {
+  .notification-panel {
+    padding: 20px;
+  }
+  .demo-clock {
+    flex-direction: column;
+    align-items: stretch;
+  }
   .queue-row > .next-action {
     grid-column: 1 / -1;
   }
