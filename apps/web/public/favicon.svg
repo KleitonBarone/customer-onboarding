@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Relay</title>
+  <path fill="#3d80db" d="M17 0h30a17 17 0 0 1 17 17v30a17 17 0 0 1-17 17H4a4 4 0 0 1-4-4V17A17 17 0 0 1 17 0Z" />
+  <path fill="#fff" d="M23 49V22h8v5c2-4 6-6 12-6v9h-2c-6 0-10 4-10 11v8Z" />
+</svg>
