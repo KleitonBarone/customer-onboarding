@@ -16,9 +16,11 @@ jobs:
         with:
           node-version-file: .node-version
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - run: npx --yes pnpm@11.23.0 install --frozen-lockfile
       - run: pnpm browser:install
       - run: pnpm verify
+      - run: npx --yes pnpm@11.23.0 build:demo
+      - run: pnpm test:demo
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

@@ -15,7 +15,7 @@ same scope. Unknown and inaccessible records return the same 404 response.
 
 The picker is available in explicit local demo mode. It is unsuitable for public
 authentication: anyone using the local app can choose another persona.
-Production identity and hosting require separate work.
+Production identity and hosting of the full API require separate work.
 
 ## Workflow transactions
 
@@ -71,3 +71,12 @@ Docker subnets, recovery, and bounded diagnostics. Each verification migrates an
 empty PostgreSQL database, seeds synthetic data, runs API/rule tests, builds the
 app, exercises Chromium against the built services, and tears down. The tests
 establish correctness for these cases, not throughput or production readiness.
+
+## Browser demo
+
+The [portfolio build](DEMO.md) serves the same UI with a browser data adapter.
+Each tab has an independent memory store, shared fictional fixtures and shared
+readiness/next-action rules. User files use object URLs within that tab; refresh
+or reset discards state. Role switching and workflow transitions are simulated.
+The static build contains no API runtime or database connection. The full app's
+authorization and transaction tests continue to run separately.

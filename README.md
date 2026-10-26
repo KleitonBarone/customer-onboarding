@@ -25,13 +25,25 @@ A durable PostgreSQL outbox delivers customer-action reminders to a local inbox.
 Each onboarding receives at most one reminder per UTC day. A persistent workspace
 demo clock makes the next window observable without waiting or expiring sessions.
 
-## Run it locally
+## Try the browser demo
 
-Use Node **24.20.0**, pnpm **11.23.0**, and Docker with Compose. Windows uses Docker
-Engine in WSL Ubuntu; Linux uses its native Docker CLI.
+Use Node **24.20.0** and pnpm **11.23.0**:
 
 ```sh
 pnpm install --frozen-lockfile
+pnpm dev:demo
+```
+
+Open `http://127.0.0.1:4312`. Each tab gets independent fictional data; changes and
+uploads stay in memory. Refresh or **Reset demo** restores the examples.
+The [Vercel deployment guide](docs/DEMO.md) covers the static build and hosting.
+
+## Run the full application
+
+The full application also needs Docker with Compose. Windows uses Docker Engine
+in WSL Ubuntu; Linux uses its native Docker CLI.
+
+```sh
 pnpm env:doctor
 pnpm dev
 ```
@@ -60,8 +72,7 @@ pnpm env:status
 Verification creates separate database, storage, and ports; applies migrations and
 fixtures; runs lint, strict types, API/domain and environment regression tests,
 builds, and two Chromium journeys; then removes its services. CI runs the same
-command on Linux. Failed browser checks retain bounded diagnostics. Browser
-installation is reused under `.local/browsers/`.
+checks on Linux, plus `pnpm verify:demo` for the static demo.
 
 Every development session starts with fresh disposable data. In a second
 terminal, `pnpm demo:reset` verifies the recorded process and database identity
@@ -70,10 +81,6 @@ before recreating that stack. It becomes the new foreground session.
 forced stop. Follow the [development guide](docs/DEVELOPMENT.md) for ownership,
 ports, migrations, and diagnostics.
 
-During development, API and shared TypeScript edits restart the API while keeping
-the current database, uploads, and sessions. An unexpected service exit stops and
-cleans the run, including a service that exits with code 0.
-
 ## Design and limits
 
 React, Vite, Tailwind, TanStack Query, Fastify, ArkType, Drizzle, and PostgreSQL
@@ -81,9 +88,10 @@ form one small application. Dependencies and the database image digest are pinne
 
 All people, companies, files, dates, and activity are synthetic. The persona picker
 is local demo authentication. PDF/CSV uploads are private and limited to 2 MiB;
-malware scanning, real identity, external email, and public hosting are outside
-this demo. Local verification establishes these scenarios; it provides no
-customer adoption or business-impact evidence.
+malware scanning, real identity, and external email are outside this demo.
+The browser build simulates the workflow; the full application enforces access
+and transactions on the server. Verification establishes these scenarios; it
+provides no customer adoption or business-impact evidence.
 
 See [architecture](docs/ARCHITECTURE.md) for the access model, workflow transactions,
 and storage tradeoffs, and [verification coverage](docs/DEVELOPMENT.md#verification-coverage)

@@ -1,5 +1,9 @@
 # Local development and verification
 
+For the browser-only portfolio demo, use `pnpm dev:demo` or `pnpm verify:demo`.
+It needs no backing services. [Demo deployment](DEMO.md) describes its Vercel build
+and browser checks; the following guide covers the full API/PostgreSQL application.
+
 Run commands from the repository root with Node 24.20.0 and pnpm 11.23.0.
 `pnpm install --frozen-lockfile` installs the pinned workspace dependencies.
 `pnpm env:doctor` checks Docker/Compose and reports the demo ports. Windows uses
