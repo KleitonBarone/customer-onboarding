@@ -117,7 +117,6 @@ export function App() {
           </button>
         </nav>
         <div className="sidebar-note">
-          <span className="live-dot" />
           {isBrowserDemo ? "Browser demonstration" : "Local demonstration"}
           <p>Fictional companies. Real workflow.</p>
         </div>
