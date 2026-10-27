@@ -2,9 +2,13 @@ import { expect, type Page } from "@playwright/test";
 import type { Actor } from "../packages/contracts/src/index.js";
 
 export async function viewAs(page: Page, role: Actor["role"], customerId?: string) {
-  const view = page.getByLabel("View as", { exact: true });
-  if ((await view.inputValue()) !== role) await view.selectOption(role);
-  await expect(view).toHaveValue(role);
+  const names = { manager: "Account manager", reviewer: "Reviewer", customer: "Customer" };
+  const view = page
+    .getByRole("group", { name: "View as", exact: true })
+    .getByRole("button", { name: names[role], exact: true });
+  await expect(view).toBeEnabled();
+  if ((await view.getAttribute("aria-pressed")) !== "true") await view.click();
+  await expect(view).toHaveAttribute("aria-pressed", "true");
   await expect(view).toBeEnabled();
   if (role === "customer" && customerId) {
     const account = page.getByLabel("Customer account", { exact: true });

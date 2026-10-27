@@ -10,12 +10,17 @@ test("switching views preserves the customer and can return to the manager queue
 }) => {
   await page.goto("/onboardings/beacon");
   await expect(page.getByRole("heading", { name: "Beacon Supply", exact: true })).toBeVisible();
-  await expect(page.getByLabel("View as", { exact: true }).locator("option")).toHaveText([
-    "Account manager",
-    "Reviewer",
-    "Customer",
-  ]);
-  await viewAs(page, "reviewer");
+  await expect(
+    page.getByRole("group", { name: "View as", exact: true }).getByRole("button"),
+  ).toHaveText(["Account manager", "Reviewer", "Customer"]);
+  const reviewer = page.getByRole("button", { name: "Reviewer", exact: true });
+  await reviewer.focus();
+  await page.keyboard.press("Enter");
+  await expect(reviewer).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Account manager", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
   await expect(page.getByRole("heading", { name: "Beacon Supply", exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/onboardings\/beacon$/);
   await viewAs(page, "customer");
@@ -169,7 +174,10 @@ test("tabs, refresh and reset restore independent fixtures; scope and reminders 
     page.getByRole("heading", { name: "Onboarding unavailable", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Reset demo", exact: true }).click();
-  await expect(page.getByLabel("View as", { exact: true })).toHaveValue("manager");
+  await expect(page.getByRole("button", { name: "Account manager", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await expect(page.getByText("Workspace demo date: 2026-10-15", { exact: true })).toBeVisible();
   await page.getByLabel("Account manager", { exact: true }).selectOption("oliver");
   await expect(page.getByRole("button", { name: /Cedar & Co/ })).toBeVisible();

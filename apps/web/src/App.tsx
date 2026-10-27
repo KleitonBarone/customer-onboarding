@@ -95,34 +95,24 @@ export function App() {
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
-      <aside className="sidebar">
-        <a
-          className="brand"
-          href="/"
-          onClick={(event) => {
-            event.preventDefault();
-            navigate(null);
-          }}
-        >
-          <span className="brand-mark" aria-hidden="true">
-            r
-          </span>
-          Relay
-        </a>
-        <p className="workspace-name">{actor?.workspaceName ?? "Customer onboarding"}</p>
-        <nav aria-label="Main navigation">
-          <button type="button" className="nav-item selected" onClick={() => navigate(null)}>
-            <Icon name="list" />
-            {actor?.role === "customer" ? "Your onboarding" : "Onboarding queue"}
-          </button>
-        </nav>
-        <div className="sidebar-note">
-          {isBrowserDemo ? "Browser demonstration" : "Local demonstration"}
-          <p>Fictional companies. Real workflow.</p>
-        </div>
-      </aside>
-      <div className="main-shell">
-        <header className="topbar">
+      <header className="topbar">
+        <div className="topbar-inner">
+          <div className="workspace-brand">
+            <a
+              className="brand"
+              href="/"
+              onClick={(event) => {
+                event.preventDefault();
+                navigate(null);
+              }}
+            >
+              <span className="brand-mark" aria-hidden="true">
+                r
+              </span>
+              Relay
+            </a>
+            <p className="workspace-name">{actor?.workspaceName ?? "Customer onboarding"}</p>
+          </div>
           <DemoViewSwitcher
             actor={actor}
             personas={personas.data ?? []}
@@ -141,133 +131,125 @@ export function App() {
             <Icon name="external" />
             <span className="sr-only"> (opens in a new tab)</span>
           </a>
-        </header>
-        <main id="main-content" tabIndex={-1}>
-          {isBrowserDemo && (
-            <section className="demo-banner" aria-label="About this demo">
+        </div>
+      </header>
+      <main id="main-content" tabIndex={-1}>
+        {isBrowserDemo && (
+          <section className="demo-banner" aria-label="About this demo">
+            <div>
+              <strong>Interactive browser demo</strong>
+              <p>Changes and uploads stay in this tab. Refresh or reset to restore the examples.</p>
+            </div>
+            <button type="button" className="secondary" onClick={() => window.location.assign("/")}>
+              <Icon name="reset" />
+              Reset demo
+            </button>
+          </section>
+        )}
+        {(switchView.error || session.error || personas.error) && (
+          <p role="alert" className="error">
+            {(switchView.error ?? session.error ?? personas.error)?.message}
+          </p>
+        )}
+        {session.isPending || switchView.isPending ? (
+          <p role="status">{switchView.isPending ? "Switching view…" : "Loading your session…"}</p>
+        ) : !actor ? (
+          <section className="welcome">
+            <p className="section-label">A clear path to launch</p>
+            <h1>
+              Every customer.
+              <br />
+              Ready for day one.
+            </h1>
+            <p>
+              Collect the details, review the documents, and see exactly what stands between your
+              customer and activation.
+            </p>
+            <p>Choose a view above to explore the customer portal or employee workspace.</p>
+          </section>
+        ) : id ? (
+          <>
+            <button
+              type="button"
+              className="text-button back"
+              onClick={() => {
+                if (actor.role === "customer" && accountManager)
+                  switchView.mutate({ membershipId: accountManager.id, onboardingId: null });
+                else navigate(null);
+              }}
+            >
+              <Icon name="arrow-left" />
+              {actor.role === "customer" ? "Back to account manager" : "Back to queue"}
+            </button>
+            {detail.isPending ? (
+              <p role="status">Loading onboarding…</p>
+            ) : detail.error ? (
+              <section className="empty-state">
+                <h1>Onboarding unavailable</h1>
+                <p role="alert">{detail.error.message}</p>
+                <button type="button" onClick={() => navigate(null)}>
+                  <Icon name="list" />
+                  Return to your workspace
+                </button>
+              </section>
+            ) : (
+              detail.data && (
+                <Onboarding
+                  detail={detail.data}
+                  actor={actor}
+                  refresh={async () => {
+                    await queries.invalidateQueries({ queryKey: ["detail"] });
+                    await queries.invalidateQueries({ queryKey: ["onboardings"] });
+                  }}
+                />
+              )
+            )}
+          </>
+        ) : (
+          <>
+            <div className="page-heading">
               <div>
-                <strong>Interactive browser demo</strong>
-                <p>
-                  Changes and uploads stay in this tab. Refresh or reset to restore the examples.
+                <p className="section-label">Your workspace</p>
+                <h1>
+                  {actor.role === "customer" ? "Your onboarding" : "Keep every launch moving."}
+                </h1>
+                <p className="intro-copy">
+                  {actor.role === "customer"
+                    ? "Complete your checklist and follow the review."
+                    : "Open a customer to see their checklist and the next step."}
                 </p>
               </div>
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => window.location.assign("/")}
-              >
-                <Icon name="reset" />
-                Reset demo
-              </button>
-            </section>
-          )}
-          {(switchView.error || session.error || personas.error) && (
-            <p role="alert" className="error">
-              {(switchView.error ?? session.error ?? personas.error)?.message}
-            </p>
-          )}
-          {session.isPending || switchView.isPending ? (
-            <p role="status">
-              {switchView.isPending ? "Switching view…" : "Loading your session…"}
-            </p>
-          ) : !actor ? (
-            <section className="welcome">
-              <p className="section-label">A clear path to launch</p>
-              <h1>
-                Every customer.
-                <br />
-                Ready for day one.
-              </h1>
-              <p>
-                Collect the details, review the documents, and see exactly what stands between your
-                customer and activation.
-              </p>
-              <p>Choose a view above to explore the customer portal or employee workspace.</p>
-            </section>
-          ) : id ? (
-            <>
-              <button
-                type="button"
-                className="text-button back"
-                onClick={() => {
-                  if (actor.role === "customer" && accountManager)
-                    switchView.mutate({ membershipId: accountManager.id, onboardingId: null });
-                  else navigate(null);
-                }}
-              >
-                <Icon name="arrow-left" />
-                {actor.role === "customer" ? "Back to account manager" : "Back to queue"}
-              </button>
-              {detail.isPending ? (
-                <p role="status">Loading onboarding…</p>
-              ) : detail.error ? (
-                <section className="empty-state">
-                  <h1>Onboarding unavailable</h1>
-                  <p role="alert">{detail.error.message}</p>
-                  <button type="button" onClick={() => navigate(null)}>
-                    <Icon name="list" />
-                    Return to your workspace
-                  </button>
-                </section>
-              ) : (
-                detail.data && (
-                  <Onboarding
-                    detail={detail.data}
-                    actor={actor}
-                    refresh={async () => {
-                      await queries.invalidateQueries({ queryKey: ["detail"] });
-                      await queries.invalidateQueries({ queryKey: ["onboardings"] });
-                    }}
-                  />
-                )
-              )}
-            </>
-          ) : (
-            <>
-              <div className="page-heading">
-                <div>
-                  <p className="section-label">Your workspace</p>
-                  <h1>
-                    {actor.role === "customer" ? "Your onboarding" : "Keep every launch moving."}
-                  </h1>
-                  <p className="intro-copy">
-                    {actor.role === "customer"
-                      ? "Complete your checklist and follow the review."
-                      : "Open a customer to see their checklist and the next step."}
-                  </p>
-                </div>
-                <span className="count-label">{list.data?.length ?? 0} customers</span>
-              </div>
-              <Queue
-                records={list.data ?? []}
-                pending={list.isPending}
-                error={list.error?.message}
-                filters={filters}
-                setFilters={setFilters}
-                onOpen={navigate}
-                onRetry={() => void list.refetch()}
-                owners={
-                  personas.data?.filter(
-                    (persona) =>
-                      persona.role === "manager" && persona.workspaceId === actor.workspaceId,
-                  ) ?? []
-                }
-              />
-            </>
-          )}
-          {actor && !switchView.isPending && (
-            <Notifications
-              key={actor.membershipId}
-              actor={actor}
-              onOpen={(id) => {
-                navigate(id);
-                document.getElementById("main-content")?.focus({ preventScroll: true });
-                window.scrollTo(0, 0);
-              }}
+              <span className="count-label">{list.data?.length ?? 0} customers</span>
+            </div>
+            <Queue
+              records={list.data ?? []}
+              pending={list.isPending}
+              error={list.error?.message}
+              filters={filters}
+              setFilters={setFilters}
+              onOpen={navigate}
+              onRetry={() => void list.refetch()}
+              owners={
+                personas.data?.filter(
+                  (persona) =>
+                    persona.role === "manager" && persona.workspaceId === actor.workspaceId,
+                ) ?? []
+              }
             />
-          )}
-        </main>
-      </div>
+          </>
+        )}
+        {actor && !switchView.isPending && (
+          <Notifications
+            key={actor.membershipId}
+            actor={actor}
+            onOpen={(id) => {
+              navigate(id);
+              document.getElementById("main-content")?.focus({ preventScroll: true });
+              window.scrollTo(0, 0);
+            }}
+          />
+        )}
+      </main>
     </div>
   );
 }

@@ -1,4 +1,16 @@
 const shapes = {
+  briefcase: (
+    <>
+      <rect x="3" y="7" width="18" height="14" rx="2" />
+      <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12a22 22 0 0 0 18 0M12 11v4" />
+    </>
+  ),
+  user: (
+    <>
+      <circle cx="12" cy="7" r="4" />
+      <path d="M4 21v-2a8 8 0 0 1 16 0v2" />
+    </>
+  ),
   list: (
     <>
       <rect x="3" y="3" width="18" height="18" rx="2" />

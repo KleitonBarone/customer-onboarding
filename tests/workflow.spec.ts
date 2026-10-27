@@ -75,10 +75,13 @@ test("unrelated customers and workspaces cannot read details or private files", 
       body: JSON.stringify({ message: "Could not switch views. Please try again." }),
     }),
   );
-  await page.getByLabel("View as", { exact: true }).selectOption("reviewer");
+  await page.getByRole("button", { name: "Reviewer", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Could not switch views. Please try again.");
-  await expect(page.getByLabel("View as", { exact: true })).toBeEnabled();
-  await expect(page.getByLabel("View as", { exact: true })).toHaveValue("manager");
+  await expect(page.getByRole("button", { name: "Reviewer", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Account manager", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await expect(page.getByRole("heading", { name: "Juniper Retail", exact: true })).toBeVisible();
   await page.unroute("**/api/demo/session");
   await viewAs(page, "reviewer");
