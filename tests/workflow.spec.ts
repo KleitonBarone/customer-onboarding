@@ -1,25 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { expect, type Page, test } from "@playwright/test";
-import { actorSchema, detailSchema } from "../packages/contracts/src/index.js";
+import { detailSchema } from "../packages/contracts/src/index.js";
+import { viewAs } from "./views.js";
 
-async function persona(page: Page, id: string) {
-  const switched = page.waitForResponse(
-    (response) =>
-      response.url().endsWith("/api/demo/session") && response.request().method() === "POST",
-  );
-  await page.getByLabel("Demo persona").selectOption(id);
-  const response = await switched;
-  expect(response.status()).toBe(200);
-  await response.finished();
-  await expect(page.getByLabel("Demo persona")).toBeEnabled();
-  await expect
-    .poll(async () => {
-      const response = await page.request.get("/api/session");
-      return response.ok() ? actorSchema.assert(await response.json()).membershipId : null;
-    })
-    .toBe(id);
-  await expect(page.getByLabel("Demo persona")).toHaveValue(id);
-}
 const agreement = (page: Page) =>
   page.getByRole("article", { name: "Service agreement", exact: true });
 async function openOnboarding(page: Page, company: string) {
@@ -69,7 +52,7 @@ test("unrelated customers and workspaces cannot read details or private files", 
       body: JSON.stringify({ message: "Queue temporarily unavailable." }),
     }),
   );
-  await persona(page, "ada");
+  await viewAs(page, "manager");
   await expect(page.getByRole("alert")).toContainText("Queue temporarily unavailable.", {
     timeout: 12000,
   });
@@ -85,10 +68,28 @@ test("unrelated customers and workspaces cannot read details or private files", 
   await expect(page.getByRole("button", { name: /Juniper Retail/ })).toHaveCount(0);
   await page.getByLabel("Account manager", { exact: true }).selectOption("");
   await openOnboarding(page, "Juniper Retail");
-  await persona(page, "owen");
+  await page.route("**/api/demo/session", (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({ message: "Could not switch views. Please try again." }),
+    }),
+  );
+  await page.getByLabel("View as", { exact: true }).selectOption("reviewer");
+  await expect(page.getByRole("alert")).toContainText("Could not switch views. Please try again.");
+  await expect(page.getByLabel("View as", { exact: true })).toBeEnabled();
+  await expect(page.getByLabel("View as", { exact: true })).toHaveValue("manager");
+  await expect(page.getByRole("heading", { name: "Juniper Retail", exact: true })).toBeVisible();
+  await page.unroute("**/api/demo/session");
+  await viewAs(page, "reviewer");
+  await expect(page.getByRole("heading", { name: "Juniper Retail", exact: true })).toBeVisible();
+  await viewAs(page, "customer", "beacon");
   await expect(page.getByRole("heading", { name: "Beacon Supply", exact: true })).toBeVisible();
   for (const id of ["owen", "iris"]) {
-    await persona(page, id);
+    // These identities remain API fixtures; the UI exposes roles and companies.
+    const switched = await page.request.post("/api/demo/session", { data: { membershipId: id } });
+    expect(switched.status()).toBe(200);
+    await page.reload();
     expect((await page.request.get("/api/onboardings/juniper")).status()).toBe(404);
     expect((await page.request.get("/api/revisions/juniper-agreement-seed-1/file")).status()).toBe(
       404,
@@ -106,7 +107,7 @@ test("an empty checklist reaches activation through document correction and keep
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
-  await persona(page, "owen");
+  await viewAs(page, "customer", "beacon");
   await expect(page.getByRole("heading", { name: "Beacon Supply", exact: true })).toBeVisible();
   await submitDetails(page, "Company details", {
     "Legal company name": "Beacon Supply Ltd",
@@ -118,8 +119,7 @@ test("an empty checklist reaches activation through document correction and keep
   });
   await upload(page, "Sample import file");
   await upload(page);
-  await persona(page, "noah");
-  await openOnboarding(page, "Beacon Supply");
+  await viewAs(page, "reviewer");
   for (const title of ["Company details", "Sample import file", "Launch contact"]) {
     const item = page.getByRole("article", { name: title, exact: true });
     await item.getByRole("button", { name: "Approve", exact: true }).click();
@@ -128,24 +128,22 @@ test("an empty checklist reaches activation through document correction and keep
   await agreement(page).getByLabel("Correction reason").fill("Use the final signed copy.");
   await agreement(page).getByRole("button", { name: "Request correction" }).click();
   await expect(agreement(page).getByText("Needs correction", { exact: true })).toBeVisible();
-  await persona(page, "owen");
+  await viewAs(page, "customer");
   await expect(
     agreement(page).getByText("Use the final signed copy.", { exact: true }),
   ).toBeVisible();
   await upload(page);
-  await persona(page, "noah");
-  await openOnboarding(page, "Beacon Supply");
+  await viewAs(page, "reviewer");
   await agreement(page).getByRole("button", { name: "Approve", exact: true }).click();
   await expect(page.getByText("Ready to activate", { exact: true })).toBeVisible();
   await agreement(page).getByText("2 submission revisions", { exact: true }).click();
   await expect(
     agreement(page).getByText(/Needs correction by Noah Ellis. Use the final signed copy./),
   ).toBeVisible();
-  await persona(page, "ada");
-  await openOnboarding(page, "Beacon Supply");
+  await viewAs(page, "manager");
   await page.getByRole("button", { name: "Activate account", exact: true }).click();
   await expect(page.getByText("Active", { exact: true })).toBeVisible();
-  await persona(page, "owen");
+  await viewAs(page, "customer");
   await expect(page.getByRole("button", { name: /Replace document|Update details/ })).toHaveCount(
     0,
   );

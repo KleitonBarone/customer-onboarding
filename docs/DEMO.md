@@ -1,9 +1,9 @@
 # Deploy the browser demo on Vercel
 
-The browser demo uses the same React UI as the full application. It starts as Ada
-with the fictional accounts and simulates submission, review, activation and
-reminders entirely in the visitor's tab. Refresh or **Reset demo** restores the
-fixtures. Uploaded PDF/CSV files stay in browser memory and disappear on reset.
+The browser demo uses the same React UI as the full application. It starts in
+account manager view with fictional accounts and simulates submission, review,
+activation and reminders entirely in the visitor's tab. Refresh or **Reset demo**
+restores the fixtures. Uploaded PDF/CSV files stay in browser memory and disappear on reset.
 Tabs and visitors have independent state.
 
 ## Deploy
@@ -28,8 +28,12 @@ See Vercel's [Vite guide](https://vercel.com/docs/frameworks/frontend/vite) and
 [package manager support](https://vercel.com/docs/package-managers).
 
 Open the deployed production URL in a private browser window before adding it to
-your portfolio. Check the queue, change personas, complete a correction, download
+your portfolio. Check the queue, switch views, complete a correction, download
 a file, and reset. Also open a direct onboarding link and refresh it.
+
+**View as** offers Account manager, Reviewer and Customer. Customer view lists
+companies and opens the account you were viewing. Role changes preserve that
+account; **Back to account manager** returns to the queue.
 
 ## Run and verify locally
 

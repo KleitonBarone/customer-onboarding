@@ -1,13 +1,42 @@
 import { readFile } from "node:fs/promises";
 import { expect, type Page, test } from "@playwright/test";
+import { viewAs } from "./views.js";
 
-async function persona(page: Page, id: string) {
-  await page.getByLabel("Demo persona", { exact: true }).selectOption(id);
-  await expect(page.getByLabel("Demo persona", { exact: true })).toBeEnabled();
-  await expect(page.getByLabel("Demo persona", { exact: true })).toHaveValue(id);
-}
 const requirement = (page: Page, title: string) =>
   page.getByRole("article", { name: title, exact: true });
+
+test("switching views preserves the customer and can return to the manager queue", async ({
+  page,
+}) => {
+  await page.goto("/onboardings/beacon");
+  await expect(page.getByRole("heading", { name: "Beacon Supply", exact: true })).toBeVisible();
+  await expect(page.getByLabel("View as", { exact: true }).locator("option")).toHaveText([
+    "Account manager",
+    "Reviewer",
+    "Customer",
+  ]);
+  await viewAs(page, "reviewer");
+  await expect(page.getByRole("heading", { name: "Beacon Supply", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/onboardings\/beacon$/);
+  await viewAs(page, "customer");
+  await expect(page.getByRole("heading", { name: "Beacon Supply", exact: true })).toBeVisible();
+  await expect(page.getByLabel("Customer account", { exact: true })).toHaveValue("beacon");
+  await viewAs(page, "customer", "cedar");
+  await expect(page.getByRole("heading", { name: "Cedar & Co", exact: true })).toBeVisible();
+  await viewAs(page, "reviewer");
+  await expect(page.getByRole("heading", { name: "Cedar & Co", exact: true })).toBeVisible();
+  await viewAs(page, "customer");
+  await page.getByRole("button", { name: "Back to account manager", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Keep every launch moving.", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /Juniper Retail/ }).click();
+  await expect(page.getByRole("heading", { name: "Juniper Retail", exact: true })).toBeVisible();
+  await page.goBack();
+  await expect(
+    page.getByRole("heading", { name: "Keep every launch moving.", exact: true }),
+  ).toBeVisible();
+});
 
 test("the static demo completes an empty checklist, correction, downloads and activation without an API", async ({
   page,
@@ -22,7 +51,7 @@ test("the static demo completes an empty checklist, correction, downloads and ac
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   await expect(page.getByText("Interactive browser demo", { exact: true })).toBeVisible();
-  await persona(page, "owen");
+  await viewAs(page, "customer", "beacon");
   await expect(page.getByRole("heading", { name: "Beacon Supply", exact: true })).toBeVisible();
   for (const [title, fields] of [
     [
@@ -51,8 +80,7 @@ test("the static demo completes an empty checklist, correction, downloads and ac
     await item.getByRole("button", { name: "Submit for review", exact: true }).click();
     await expect(item.getByText("In review", { exact: true })).toBeVisible();
   }
-  await persona(page, "noah");
-  await page.getByRole("button", { name: /Beacon Supply/ }).click();
+  await viewAs(page, "reviewer");
   for (const title of ["Company details", "Sample import file", "Launch contact"]) {
     const item = requirement(page, title);
     await item.getByRole("button", { name: "Approve", exact: true }).click();
@@ -62,7 +90,7 @@ test("the static demo completes an empty checklist, correction, downloads and ac
   await agreement.getByLabel("Correction reason").fill("Include the signed final page.");
   await agreement.getByRole("button", { name: "Request correction", exact: true }).click();
   await expect(agreement.getByText("Needs correction", { exact: true })).toBeVisible();
-  await persona(page, "owen");
+  await viewAs(page, "customer");
   await expect(
     agreement.getByText("Include the signed final page.", { exact: true }),
   ).toBeVisible();
@@ -70,17 +98,15 @@ test("the static demo completes an empty checklist, correction, downloads and ac
   await agreement.getByLabel(/PDF agreement/).setInputFiles("fixtures/service-agreement.pdf");
   await agreement.getByRole("button", { name: "Submit for review", exact: true }).click();
   await expect(agreement.getByText("In review", { exact: true })).toBeVisible();
-  await persona(page, "noah");
-  await page.getByRole("button", { name: /Beacon Supply/ }).click();
+  await viewAs(page, "reviewer");
   await agreement.getByRole("button", { name: "Approve", exact: true }).click();
   await expect(page.getByText("Ready to activate", { exact: true })).toBeVisible();
   await agreement.getByText("2 submission revisions", { exact: true }).click();
   await expect(agreement.getByText(/Needs correction by Noah Ellis/)).toBeVisible();
-  await persona(page, "ada");
-  await page.getByRole("button", { name: /Beacon Supply/ }).click();
+  await viewAs(page, "manager");
   await page.getByRole("button", { name: "Activate account", exact: true }).click();
   await expect(page.getByText("Active", { exact: true })).toBeVisible();
-  await persona(page, "owen");
+  await viewAs(page, "customer");
   await expect(page.getByRole("button", { name: /Replace document|Update details/ })).toHaveCount(
     0,
   );
@@ -134,7 +160,7 @@ test("tabs, refresh and reset restore independent fixtures; scope and reminders 
   await page.getByRole("button", { name: "Advance 24 hours", exact: true }).click();
   await expect(page.getByText("Workspace demo date: 2026-10-16", { exact: true })).toBeVisible();
   await expect(page.locator('time[datetime="2026-10-16"]')).toBeVisible();
-  await persona(page, "owen");
+  await viewAs(page, "customer", "beacon");
   await page.evaluate(() => {
     history.pushState({}, "", "/onboardings/juniper");
     window.dispatchEvent(new PopStateEvent("popstate"));
@@ -143,7 +169,7 @@ test("tabs, refresh and reset restore independent fixtures; scope and reminders 
     page.getByRole("heading", { name: "Onboarding unavailable", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Reset demo", exact: true }).click();
-  await expect(page.getByLabel("Demo persona", { exact: true })).toHaveValue("ada");
+  await expect(page.getByLabel("View as", { exact: true })).toHaveValue("manager");
   await expect(page.getByText("Workspace demo date: 2026-10-15", { exact: true })).toBeVisible();
   await page.getByLabel("Account manager", { exact: true }).selectOption("oliver");
   await expect(page.getByRole("button", { name: /Cedar & Co/ })).toBeVisible();

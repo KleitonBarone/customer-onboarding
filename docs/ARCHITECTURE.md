@@ -7,13 +7,14 @@ and committed migrations. There is no broker or external service dependency.
 
 ## Identity and access
 
-The demo picker exchanges a known membership ID for an opaque HttpOnly cookie.
+The demo view switcher maps roles and companies to seeded memberships and
+exchanges a membership ID for an opaque HttpOnly cookie.
 Only its hash is stored. Every protected request resolves the session to a user,
 role, and provider workspace. Employees see their workspace; customers also need
 an explicit customer-account assignment. Detail and historical file reads use the
 same scope. Unknown and inaccessible records return the same 404 response.
 
-The picker is available in explicit local demo mode. It is unsuitable for public
+The switcher is available in explicit local demo mode. It is unsuitable for public
 authentication: anyone using the local app can choose another persona.
 Production identity and hosting of the full API require separate work.
 

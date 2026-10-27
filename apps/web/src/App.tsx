@@ -7,6 +7,7 @@ import {
 } from "../../../packages/contracts/src/index.js";
 import { ActivationPanel } from "./ActivationPanel.js";
 import { api, isBrowserDemo, request } from "./api.js";
+import { type DemoViewChange, DemoViewSwitcher } from "./DemoViewSwitcher.js";
 import { Icon } from "./Icon.js";
 import { Notifications } from "./Notifications.js";
 import { Queue } from "./Queue.js";
@@ -22,7 +23,6 @@ const labels = {
   ready: "Ready to activate",
   active: "Active",
 };
-const roleLabels = { manager: "Account manager", reviewer: "Reviewer", customer: "Customer" };
 
 function currentId() {
   const match = /^\/onboardings\/([^/]+)$/.exec(window.location.pathname);
@@ -31,29 +31,51 @@ function currentId() {
 
 export function App() {
   const queries = useQueryClient();
-  const [generation, setGeneration] = useState(0);
   const [filters, setFilters] = useState(() => queueInput.assert({ limit: 20, offset: 0 }));
   const [selectedId, setSelectedId] = useState(currentId);
   const personas = useQuery({
-    queryKey: ["personas", generation],
+    queryKey: ["personas"],
     queryFn: ({ signal }) => api.personas(signal),
   });
   const session = useQuery({
-    queryKey: ["session", generation],
+    queryKey: ["session"],
     queryFn: ({ signal }) => api.session(signal),
     retry: false,
   });
   const actor = session.data;
+  const switchView = useMutation({
+    mutationFn: async ({ membershipId }: DemoViewChange) => {
+      await queries.cancelQueries();
+      await request("/demo/session", { method: "POST", body: JSON.stringify({ membershipId }) });
+      const nextActor = await api.session();
+      if (!nextActor) throw new Error("Could not switch views. Please try again.");
+      return nextActor;
+    },
+    onSuccess: (nextActor, { onboardingId }) => {
+      for (const key of ["onboardings", "detail", "clock", "notifications"])
+        queries.removeQueries({ queryKey: [key] });
+      queries.setQueryData(["session"], nextActor);
+      setFilters(queueInput.assert({ limit: 20, offset: 0 }));
+      window.history.replaceState(
+        {},
+        "",
+        onboardingId ? `/onboardings/${encodeURIComponent(onboardingId)}` : "/",
+      );
+      setSelectedId(onboardingId);
+      window.scrollTo(0, 0);
+    },
+    onError: () => void queries.invalidateQueries({ queryKey: ["session"] }),
+  });
   const list = useQuery({
-    queryKey: ["onboardings", generation, filters],
+    queryKey: ["onboardings", actor?.membershipId, filters],
     queryFn: ({ signal }) => api.onboardings(filters, signal),
-    enabled: !!actor,
+    enabled: !!actor && !switchView.isPending,
   });
   const id = selectedId ?? (actor?.role === "customer" ? list.data?.[0]?.id : undefined);
   const detail = useQuery({
-    queryKey: ["detail", generation, id],
+    queryKey: ["detail", actor?.membershipId, id],
     queryFn: ({ signal }) => api.detail(id ?? "", signal),
-    enabled: !!actor && !!id,
+    enabled: !!actor && !!id && !switchView.isPending,
     retry: false,
   });
   const navigate = (next: string | null) => {
@@ -65,18 +87,9 @@ export function App() {
     window.addEventListener("popstate", listener);
     return () => window.removeEventListener("popstate", listener);
   }, []);
-  const login = useMutation({
-    mutationFn: async (membershipId: string) => {
-      await queries.cancelQueries();
-      await request("/demo/session", { method: "POST", body: JSON.stringify({ membershipId }) });
-    },
-    onSuccess: () => {
-      queries.clear();
-      setFilters(queueInput.assert({ limit: 20, offset: 0 }));
-      navigate(null);
-      setGeneration((value) => value + 1);
-    },
-  });
+  const accountManager = personas.data?.find(
+    (person) => person.workspaceId === actor?.workspaceId && person.role === "manager",
+  );
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -111,39 +124,24 @@ export function App() {
       </aside>
       <div className="main-shell">
         <header className="topbar">
-          <span>Customer onboarding</span>
-          <div className="topbar-actions">
-            <label className="persona-label" htmlFor="persona">
-              Demo persona
-              <select
-                id="persona"
-                aria-label="Demo persona"
-                value={actor?.membershipId ?? ""}
-                disabled={login.isPending}
-                onChange={(event) => {
-                  if (event.target.value) login.mutate(event.target.value);
-                }}
-              >
-                <option value="">Choose a persona</option>
-                {personas.data?.map((persona) => (
-                  <option key={persona.id} value={persona.id}>
-                    {persona.name} · {roleLabels[persona.role]} · {persona.workspaceName}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <a
-              className="repository-link secondary"
-              href="https://github.com/KleitonBarone/customer-onboarding"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Icon name="github" />
-              View on GitHub
-              <Icon name="external" />
-              <span className="sr-only"> (opens in a new tab)</span>
-            </a>
-          </div>
+          <DemoViewSwitcher
+            actor={actor}
+            personas={personas.data ?? []}
+            onboardingId={id ?? null}
+            pending={switchView.isPending}
+            onSwitch={(view) => switchView.mutate(view)}
+          />
+          <a
+            className="repository-link secondary"
+            href="https://github.com/KleitonBarone/customer-onboarding"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Icon name="github" />
+            View on GitHub
+            <Icon name="external" />
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
         </header>
         <main id="main-content" tabIndex={-1}>
           {isBrowserDemo && (
@@ -164,13 +162,15 @@ export function App() {
               </button>
             </section>
           )}
-          {(login.error || session.error || personas.error) && (
+          {(switchView.error || session.error || personas.error) && (
             <p role="alert" className="error">
-              {(login.error ?? session.error ?? personas.error)?.message}
+              {(switchView.error ?? session.error ?? personas.error)?.message}
             </p>
           )}
-          {session.isPending ? (
-            <p role="status">Loading your session…</p>
+          {session.isPending || switchView.isPending ? (
+            <p role="status">
+              {switchView.isPending ? "Switching view…" : "Loading your session…"}
+            </p>
           ) : !actor ? (
             <section className="welcome">
               <p className="section-label">A clear path to launch</p>
@@ -183,15 +183,21 @@ export function App() {
                 Collect the details, review the documents, and see exactly what stands between your
                 customer and activation.
               </p>
-              <p>
-                Choose a demo persona above to explore the customer portal or employee workspace.
-              </p>
+              <p>Choose a view above to explore the customer portal or employee workspace.</p>
             </section>
           ) : id ? (
             <>
-              <button type="button" className="text-button back" onClick={() => navigate(null)}>
+              <button
+                type="button"
+                className="text-button back"
+                onClick={() => {
+                  if (actor.role === "customer" && accountManager)
+                    switchView.mutate({ membershipId: accountManager.id, onboardingId: null });
+                  else navigate(null);
+                }}
+              >
                 <Icon name="arrow-left" />
-                Back to {actor.role === "customer" ? "your onboarding" : "queue"}
+                {actor.role === "customer" ? "Back to account manager" : "Back to queue"}
               </button>
               {detail.isPending ? (
                 <p role="status">Loading onboarding…</p>
@@ -250,7 +256,7 @@ export function App() {
               />
             </>
           )}
-          {actor && (
+          {actor && !switchView.isPending && (
             <Notifications
               key={actor.membershipId}
               actor={actor}

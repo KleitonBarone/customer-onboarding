@@ -48,17 +48,18 @@ pnpm env:doctor
 pnpm dev
 ```
 
-Open the reported URL, normally `http://127.0.0.1:4310`. Choose **Ada Wells** for
-the queue or **Maya Chen** for Juniper Retail. Juniper's agreement needs correction:
-upload `fixtures/service-agreement.pdf` as Maya, approve it as **Noah Ellis**,
-then activate it as Ada. The other three requirements are already approved.
+Open the reported URL, normally `http://127.0.0.1:4310`. Use **View as** to choose
+**Account manager**, **Reviewer**, or **Customer**. Customer view offers company
+names and defaults to the account you were viewing. Juniper's agreement needs
+correction: upload `fixtures/service-agreement.pdf` as Customer, approve it as
+Reviewer, then activate it as Account manager. The other three items are approved.
 The fixtures also cover Beacon (not started), Atlas (waiting for review), Cedar
 (ready), and Lumen (active).
 
-**Owen Reed** belongs to Beacon; **Iris Park** belongs to a second provider.
-Neither can retrieve Juniper's records. Ada can advance Northstar's demo date in
-the inbox to generate another reminder while Juniper still needs customer action.
-The processor checks every five seconds; no real email is sent.
+Switching views keeps the current account open. **Back to account manager** returns
+customers to the queue. Account managers can advance the demo date in the inbox
+to generate another reminder. The processor checks every five seconds; no real
+email is sent. API tests also verify customer and provider isolation.
 
 ## Verify, reset, and stop
 
@@ -86,7 +87,7 @@ ports, migrations, and diagnostics.
 React, Vite, Tailwind, TanStack Query, Fastify, ArkType, Drizzle, and PostgreSQL
 form one small application. Dependencies and the database image digest are pinned.
 
-All people, companies, files, dates, and activity are synthetic. The persona picker
+All people, companies, files, dates, and activity are synthetic. The view switcher
 is local demo authentication. PDF/CSV uploads are private and limited to 2 MiB;
 malware scanning, real identity, and external email are outside this demo.
 The browser build simulates the workflow; the full application enforces access

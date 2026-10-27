@@ -319,13 +319,26 @@ a {
   color: #597087;
   font-size: 14px;
 }
-.topbar-actions {
+.demo-view-switcher {
+  flex: 1;
+  min-width: 0;
+}
+.demo-view-fields {
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 12px 20px;
-  max-width: 100%;
+  gap: 12px;
+}
+.demo-view-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 0 1 200px;
+  min-width: 0;
+  font-size: 12px;
+}
+.demo-view-help {
+  margin: 6px 0 0;
+  font-size: 12px;
 }
 .repository-link {
   display: inline-flex;
@@ -338,14 +351,6 @@ a {
   text-decoration: none;
   white-space: nowrap;
 }
-.persona-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  max-width: 100%;
-  font-size: 12px;
-}
 select {
   max-width: 390px;
   min-height: 38px;
@@ -355,6 +360,11 @@ select {
   border-radius: 6px;
   padding: 6px 10px;
   font-size: 12px;
+}
+.demo-view-fields select {
+  width: 100%;
+  min-height: 40px;
+  font-size: 14px;
 }
 main {
   padding: 42px 44px 60px;
@@ -832,11 +842,6 @@ small {
   .activity-panel {
     padding-top: 12px;
   }
-  .persona-label {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 3px;
-  }
 }
 @media (max-width: 700px) {
   .notifications li {
@@ -848,9 +853,12 @@ small {
     width: 24px;
     height: 24px;
   }
-  .topbar-actions,
+  .demo-view-switcher,
   .repository-link {
     width: 100%;
+  }
+  .demo-view-fields label {
+    flex: 1 1 180px;
   }
   .repository-link {
     justify-content: center;
@@ -908,10 +916,6 @@ small {
     padding: 12px 20px;
     min-height: 86px;
   }
-  .topbar > span {
-    display: none;
-  }
-  .persona-label,
   select {
     width: 100%;
     max-width: none;

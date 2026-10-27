@@ -13,7 +13,7 @@ the provider; customer memberships also need an account assignment. The API
 resolves identity from a server-side session and scopes each read and write.
 Changing an onboarding ID or historical revision ID cannot bypass that scope.
 
-The persona picker makes these roles easy to demonstrate locally. It deliberately
+The role switcher makes these views easy to demonstrate locally. It deliberately
 does not establish production identity. A public deployment would need real
 authentication before this access model could be relied on.
 
