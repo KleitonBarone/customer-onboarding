@@ -250,7 +250,17 @@ export function App() {
               />
             </>
           )}
-          {actor && <Notifications key={actor.membershipId} actor={actor} />}
+          {actor && (
+            <Notifications
+              key={actor.membershipId}
+              actor={actor}
+              onOpen={(id) => {
+                navigate(id);
+                document.getElementById("main-content")?.focus({ preventScroll: true });
+                window.scrollTo(0, 0);
+              }}
+            />
+          )}
         </main>
       </div>
     </div>

@@ -61,12 +61,15 @@ button {
   padding: 10px 18px;
   font-weight: 600;
 }
-button:hover {
+button:where(:not(:disabled)):hover {
   background: #184b9b;
 }
 button:disabled {
   opacity: 0.6;
-  cursor: wait;
+  cursor: not-allowed;
+}
+button[aria-busy="true"] {
+  cursor: progress;
 }
 .icon {
   display: block;
@@ -154,6 +157,8 @@ button:disabled {
   font-size: 14px;
 }
 .notifications {
+  display: grid;
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -162,19 +167,53 @@ button:disabled {
 }
 .notifications li {
   display: grid;
-  gap: 6px;
-  padding: 16px 0;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #ecd2a0;
+  border-left: 3px solid #a56a12;
+  border-radius: 8px;
+  background: #fff8eb;
   overflow-wrap: anywhere;
   font-size: 14px;
 }
-.notifications li:first-child {
-  padding-top: 0;
+.reminder-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fce6b7;
+  color: #775216;
 }
-.notifications li:last-child {
-  padding-bottom: 0;
+.reminder-copy {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
 }
-.notifications :where(li + li) {
-  border-top: 1px solid #e7edf3;
+.reminder-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+.reminder-heading strong {
+  color: #775216;
+  font-weight: 650;
+}
+.reminder-action {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 8px;
+  min-height: 36px;
+  color: #2362c4;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .notification-date,
 .notification-note {
@@ -389,7 +428,7 @@ h3 {
   padding: 24px;
   border-top: 1px solid #e7edf3;
 }
-.queue-row:hover {
+.queue-row:where(:not(:disabled)):hover {
   background: #f4f8fe;
 }
 .queue-row strong {
@@ -484,7 +523,7 @@ small {
   padding: 5px 0;
   font-size: 13px;
 }
-.text-button:hover {
+.text-button:where(:not(:disabled)):hover {
   color: #164a84;
   background: transparent;
   text-decoration: underline;
@@ -566,7 +605,7 @@ small {
   color: #315d86;
   border: 1px solid #d3dfeb;
 }
-.secondary:hover {
+.secondary:where(:not(:disabled)):hover {
   background: #eff5fc;
 }
 .small {
@@ -800,6 +839,15 @@ small {
   }
 }
 @media (max-width: 700px) {
+  .notifications li {
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+  .reminder-icon {
+    width: 24px;
+    height: 24px;
+  }
   .topbar-actions,
   .repository-link {
     width: 100%;

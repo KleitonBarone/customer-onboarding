@@ -46,7 +46,7 @@ export function ActivationPanel({
               ? "Everything is approved. Ready for launch."
               : "Approval needed before activation"}
         </strong>
-        <p>
+        <p id="activation-guidance">
           {onboarding.activeAt
             ? "Changes require the account manager to reopen onboarding first."
             : blockers.length
@@ -64,6 +64,8 @@ export function ActivationPanel({
           <button
             type="button"
             disabled={onboarding.status !== "ready" || mutation.isPending}
+            aria-busy={mutation.isPending}
+            aria-describedby="activation-guidance"
             onClick={() => mutation.mutate("activate")}
           >
             <Icon name="power" />
@@ -87,9 +89,9 @@ export function ActivationPanel({
             rows={2}
           />
           <div className="form-actions">
-            <button type="submit" disabled={mutation.isPending}>
+            <button type="submit" disabled={mutation.isPending} aria-busy={mutation.isPending}>
               <Icon name="unlock" />
-              Confirm reopening
+              {mutation.isPending ? "Reopening…" : "Confirm reopening"}
             </button>
             <button type="button" className="text-button" onClick={() => setReopening(false)}>
               <Icon name="cancel" />

@@ -204,7 +204,7 @@ export function RequirementCard({
             </>
           )}
           <div className="form-actions">
-            <button type="submit" disabled={submission.isPending}>
+            <button type="submit" disabled={submission.isPending} aria-busy={submission.isPending}>
               <Icon name="send" />
               {submission.isPending ? "Submitting…" : "Submit for review"}
             </button>
@@ -278,18 +278,22 @@ export function RequirementCard({
                 type="button"
                 onClick={() => review.mutate("approved")}
                 disabled={review.isPending}
+                aria-busy={review.isPending && review.variables === "approved"}
               >
                 <Icon name="check" />
-                Approve
+                {review.isPending && review.variables === "approved" ? "Approving…" : "Approve"}
               </button>
               <button
                 type="button"
                 className="secondary"
                 onClick={() => review.mutate("changes_requested")}
                 disabled={review.isPending}
+                aria-busy={review.isPending && review.variables === "changes_requested"}
               >
                 <Icon name="feedback" />
-                Request correction
+                {review.isPending && review.variables === "changes_requested"
+                  ? "Requesting correction…"
+                  : "Request correction"}
               </button>
             </div>
           </div>

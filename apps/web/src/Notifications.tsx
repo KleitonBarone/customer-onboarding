@@ -3,7 +3,7 @@ import type { Actor } from "../../../packages/contracts/src/index.js";
 import { api, isBrowserDemo, request } from "./api.js";
 import { Icon } from "./Icon.js";
 
-export function Notifications({ actor }: { actor: Actor }) {
+export function Notifications({ actor, onOpen }: { actor: Actor; onOpen: (id: string) => void }) {
   const queries = useQueryClient();
   const clock = useQuery({
     queryKey: ["clock", actor.membershipId],
@@ -40,10 +40,11 @@ export function Notifications({ actor }: { actor: Actor }) {
             type="button"
             className="secondary"
             disabled={advance.isPending}
+            aria-busy={advance.isPending}
             onClick={() => advance.mutate()}
           >
             <Icon name="clock" />
-            Advance 24 hours
+            {advance.isPending ? "Advancing…" : "Advance 24 hours"}
           </button>
         )}
       </div>
@@ -60,8 +61,45 @@ export function Notifications({ actor }: { actor: Actor }) {
         <ul className="notifications">
           {inbox.data.map((item) => (
             <li key={item.id}>
-              <p>{item.message}</p>
-              <small className="notification-date">Reminder window: {item.window}</small>
+              <span className="reminder-icon">
+                <Icon name="bell" />
+              </span>
+              <div className="reminder-copy">
+                <div className="reminder-heading">
+                  <strong>Reminder</strong>
+                  <small className="notification-date">
+                    <time dateTime={item.window}>
+                      {new Date(`${item.window}T00:00:00.000Z`).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        timeZone: "UTC",
+                      })}
+                    </time>
+                  </small>
+                </div>
+                <p>{item.message}</p>
+                <a
+                  className="reminder-action"
+                  href={`/onboardings/${encodeURIComponent(item.onboardingId)}`}
+                  aria-label={`${actor.role === "customer" ? "Open checklist" : "View onboarding"} for ${item.company}`}
+                  onClick={(event) => {
+                    if (
+                      event.button !== 0 ||
+                      event.metaKey ||
+                      event.ctrlKey ||
+                      event.shiftKey ||
+                      event.altKey
+                    )
+                      return;
+                    event.preventDefault();
+                    onOpen(item.onboardingId);
+                  }}
+                >
+                  {actor.role === "customer" ? "Open checklist" : "View onboarding"}
+                  <Icon name="arrow-right" />
+                </a>
+              </div>
             </li>
           ))}
         </ul>

@@ -109,6 +109,10 @@ test("tabs, refresh and reset restore independent fixtures; scope and reminders 
   });
   await page.goto("/onboardings/cedar");
   await expect(page.getByRole("heading", { name: "Cedar & Co", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Activate account", exact: true })).toHaveCSS(
+    "cursor",
+    "pointer",
+  );
   const seededDownload = page.waitForEvent("download");
   await page.getByRole("link", { name: "Download service-agreement.pdf", exact: true }).click();
   const seededFile = await (await seededDownload).path();
@@ -129,7 +133,7 @@ test("tabs, refresh and reset restore independent fixtures; scope and reminders 
   await expect(page.getByRole("button", { name: "Activate account", exact: true })).toBeEnabled();
   await page.getByRole("button", { name: "Advance 24 hours", exact: true }).click();
   await expect(page.getByText("Workspace demo date: 2026-10-16", { exact: true })).toBeVisible();
-  await expect(page.getByText("Reminder window: 2026-10-16", { exact: true })).toBeVisible();
+  await expect(page.locator('time[datetime="2026-10-16"]')).toBeVisible();
   await persona(page, "owen");
   await page.evaluate(() => {
     history.pushState({}, "", "/onboardings/juniper");
@@ -145,5 +149,14 @@ test("tabs, refresh and reset restore independent fixtures; scope and reminders 
   await expect(page.getByRole("button", { name: /Cedar & Co/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Lumen Home/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Juniper Retail/ })).toHaveCount(0);
+  await page.getByRole("link", { name: "View onboarding for Juniper Retail", exact: true }).click();
+  await expect(page).toHaveURL(/\/onboardings\/juniper$/);
+  await expect(page.getByRole("heading", { name: "Juniper Retail", exact: true })).toBeVisible();
+  await expect(page.locator("#main-content")).toBeFocused();
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  const blockedActivation = page.getByRole("button", { name: "Activate account", exact: true });
+  await expect(blockedActivation).toBeDisabled();
+  await blockedActivation.hover();
+  await expect(blockedActivation).toHaveCSS("cursor", "not-allowed");
   expect(apiRequests).toEqual([]);
 });
