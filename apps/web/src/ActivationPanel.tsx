@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { Actor, OnboardingDetail } from "../../../packages/contracts/src/index.js";
 import { activationBlockers } from "../../../packages/contracts/src/workflow.js";
 import { request } from "./api.js";
+import { Icon } from "./Icon.js";
 
 export function ActivationPanel({
   detail,
@@ -56,6 +57,7 @@ export function ActivationPanel({
       {actor.role === "manager" &&
         (onboarding.activeAt ? (
           <button type="button" className="secondary" onClick={() => setReopening(!reopening)}>
+            <Icon name="unlock" />
             Reopen onboarding
           </button>
         ) : (
@@ -64,6 +66,7 @@ export function ActivationPanel({
             disabled={onboarding.status !== "ready" || mutation.isPending}
             onClick={() => mutation.mutate("activate")}
           >
+            <Icon name="power" />
             {mutation.isPending ? "Activating…" : "Activate account"}
           </button>
         ))}
@@ -85,9 +88,11 @@ export function ActivationPanel({
           />
           <div className="form-actions">
             <button type="submit" disabled={mutation.isPending}>
+              <Icon name="unlock" />
               Confirm reopening
             </button>
             <button type="button" className="text-button" onClick={() => setReopening(false)}>
+              <Icon name="cancel" />
               Cancel
             </button>
           </div>
@@ -106,6 +111,7 @@ export function ActivationPanel({
               mutation.reset();
             }}
           >
+            <Icon name="refresh" />
             Refresh onboarding
           </button>
         </div>

@@ -3,6 +3,7 @@ import {
   type personaSchema,
   queueInput,
 } from "../../../packages/contracts/src/index.js";
+import { Icon } from "./Icon.js";
 
 const labels = {
   draft: "Not started",
@@ -97,6 +98,7 @@ export function Queue({
             {error}
           </p>
           <button type="button" className="secondary" onClick={onRetry}>
+            <Icon name="refresh" />
             Retry
           </button>
         </div>
@@ -133,6 +135,7 @@ export function Queue({
                 <span className="owner">{record.owner}</span>
                 <span className="age">{record.ageDays}d</span>
                 <span className="next-action">{record.nextAction}</span>
+                <Icon name="chevron-right" />
               </button>
             ))
           ) : (
@@ -143,6 +146,7 @@ export function Queue({
                 className="secondary"
                 onClick={() => setFilters(queueInput.assert({ limit: 20, offset: 0 }))}
               >
+                <Icon name="cancel" />
                 Clear filters
               </button>
             </div>
@@ -159,6 +163,7 @@ export function Queue({
               setFilters({ ...filters, offset: Math.max(0, filters.offset - filters.limit) })
             }
           >
+            <Icon name="arrow-left" />
             Previous page
           </button>
           <button
@@ -168,6 +173,7 @@ export function Queue({
             onClick={() => setFilters({ ...filters, offset: filters.offset + filters.limit })}
           >
             Next page
+            <Icon name="arrow-right" />
           </button>
         </div>
       )}

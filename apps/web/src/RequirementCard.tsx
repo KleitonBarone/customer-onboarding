@@ -6,6 +6,7 @@ import {
   submissionInput,
 } from "../../../packages/contracts/src/index.js";
 import { documentUrl, request } from "./api.js";
+import { Icon } from "./Icon.js";
 
 const states = {
   missing: "Not submitted",
@@ -111,6 +112,7 @@ export function RequirementCard({
               setEditing(!editing);
             }}
           >
+            <Icon name={fileRequirement ? "upload" : revision ? "edit" : "plus"} />
             {fileRequirement
               ? revision
                 ? "Replace document"
@@ -134,6 +136,7 @@ export function RequirementCard({
               submission.reset();
             }}
           >
+            <Icon name="refresh" />
             Refresh requirement
           </button>
         </div>
@@ -202,9 +205,11 @@ export function RequirementCard({
           )}
           <div className="form-actions">
             <button type="submit" disabled={submission.isPending}>
+              <Icon name="send" />
               {submission.isPending ? "Submitting…" : "Submit for review"}
             </button>
             <button type="button" className="text-button" onClick={() => setEditing(false)}>
+              <Icon name="cancel" />
               Cancel
             </button>
           </div>
@@ -218,7 +223,8 @@ export function RequirementCard({
               href={documentUrl(revision.id)}
               download={revision.fileName}
             >
-              Download {revision.fileName}
+              <Icon name="download" />
+              <span>Download {revision.fileName}</span>
             </a>
           ) : (
             <p>{revision.content}</p>
@@ -262,6 +268,7 @@ export function RequirementCard({
                     review.reset();
                   }}
                 >
+                  <Icon name="refresh" />
                   Refresh requirement
                 </button>
               </div>
@@ -272,6 +279,7 @@ export function RequirementCard({
                 onClick={() => review.mutate("approved")}
                 disabled={review.isPending}
               >
+                <Icon name="check" />
                 Approve
               </button>
               <button
@@ -280,6 +288,7 @@ export function RequirementCard({
                 onClick={() => review.mutate("changes_requested")}
                 disabled={review.isPending}
               >
+                <Icon name="feedback" />
                 Request correction
               </button>
             </div>
@@ -298,6 +307,7 @@ export function RequirementCard({
                   <strong>Revision {item.number}</strong>
                   {item.fileName ? (
                     <a href={documentUrl(item.id)} download={item.fileName}>
+                      <Icon name="download" />
                       Download revision {item.number}
                     </a>
                   ) : (

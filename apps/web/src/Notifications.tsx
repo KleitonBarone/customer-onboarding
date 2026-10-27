@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Actor } from "../../../packages/contracts/src/index.js";
 import { api, isBrowserDemo, request } from "./api.js";
+import { Icon } from "./Icon.js";
 
 export function Notifications({ actor }: { actor: Actor }) {
   const queries = useQueryClient();
@@ -41,6 +42,7 @@ export function Notifications({ actor }: { actor: Actor }) {
             disabled={advance.isPending}
             onClick={() => advance.mutate()}
           >
+            <Icon name="clock" />
             Advance 24 hours
           </button>
         )}

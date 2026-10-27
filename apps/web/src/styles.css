@@ -49,6 +49,10 @@ select {
   -webkit-tap-highlight-color: transparent;
 }
 button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   cursor: pointer;
   border: 0;
   border-radius: 7px;
@@ -63,6 +67,23 @@ button:hover {
 button:disabled {
   opacity: 0.6;
   cursor: wait;
+}
+.icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 :focus-visible {
   outline: 3px solid #68a4f0;
@@ -217,6 +238,7 @@ a {
   margin: 16px 0 40px;
 }
 .nav-item {
+  justify-content: flex-start;
   width: 100%;
   background: #284d6a;
   text-align: left;
@@ -248,6 +270,7 @@ a {
 .topbar {
   min-height: 100px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
@@ -257,10 +280,31 @@ a {
   color: #597087;
   font-size: 14px;
 }
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  max-width: 100%;
+}
+.repository-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 7px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
 .persona-label {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  max-width: 100%;
   font-size: 12px;
 }
 select {
@@ -325,7 +369,7 @@ h3 {
 .queue-heading,
 .queue-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) 120px 125px 50px minmax(0, 1.4fr);
+  grid-template-columns: minmax(0, 1.4fr) 120px 125px 50px minmax(0, 1.4fr) 16px;
   gap: 16px;
   text-align: left;
   align-items: center;
@@ -405,7 +449,7 @@ small {
 @media (max-width: 1200px) {
   .queue-heading,
   .queue-row {
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.2fr);
+    grid-template-columns: minmax(0, 1.2fr) 120px minmax(0, 1.2fr) 16px;
   }
   .queue-heading > .owner,
   .queue-row > .owner,
@@ -549,7 +593,9 @@ small {
 }
 .document-link {
   overflow-wrap: anywhere;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 600;
   color: #2362c4;
   margin-bottom: 6px;
@@ -631,7 +677,9 @@ small {
 }
 .revision-history a {
   overflow-wrap: anywhere;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   margin: 4px 0;
   color: #2362c4;
 }
@@ -727,6 +775,9 @@ small {
   color: #647b8e;
 }
 @media (max-width: 1100px) {
+  .nav-item {
+    font-size: 13px;
+  }
   .sidebar {
     width: 205px;
   }
@@ -749,6 +800,13 @@ small {
   }
 }
 @media (max-width: 700px) {
+  .topbar-actions,
+  .repository-link {
+    width: 100%;
+  }
+  .repository-link {
+    justify-content: center;
+  }
   .notification-panel {
     padding: 20px;
   }
@@ -758,6 +816,8 @@ small {
   }
   .queue-row > .next-action {
     grid-column: 1 / -1;
+    grid-row: 2;
+    padding-right: 24px;
   }
   .queue-heading > .next-action {
     display: none;
@@ -821,12 +881,17 @@ small {
   }
   .queue-heading,
   .queue-row {
-    grid-template-columns: 1.4fr 1fr;
+    grid-template-columns: minmax(0, 1fr) 120px;
     padding: 18px;
   }
   .queue-heading > span:last-child,
   .queue-row > .owner {
     display: none;
+  }
+  .queue-row > .icon {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
   }
   .panel-heading {
     align-items: flex-start;
@@ -838,6 +903,9 @@ small {
   }
   .requirement-heading {
     flex-wrap: wrap;
+  }
+  .requirement-heading > div {
+    flex-basis: calc(100% - 46px);
   }
   .requirement-heading > .small {
     margin-left: 46px;

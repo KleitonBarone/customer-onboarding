@@ -7,6 +7,7 @@ import {
 } from "../../../packages/contracts/src/index.js";
 import { ActivationPanel } from "./ActivationPanel.js";
 import { api, isBrowserDemo, request } from "./api.js";
+import { Icon } from "./Icon.js";
 import { Notifications } from "./Notifications.js";
 import { Queue } from "./Queue.js";
 import { RequirementCard } from "./RequirementCard.js";
@@ -98,6 +99,7 @@ export function App() {
         <p className="workspace-name">{actor?.workspaceName ?? "Customer onboarding"}</p>
         <nav aria-label="Main navigation">
           <button type="button" className="nav-item selected" onClick={() => navigate(null)}>
+            <Icon name="list" />
             {actor?.role === "customer" ? "Your onboarding" : "Onboarding queue"}
           </button>
         </nav>
@@ -110,25 +112,38 @@ export function App() {
       <div className="main-shell">
         <header className="topbar">
           <span>Customer onboarding</span>
-          <label className="persona-label" htmlFor="persona">
-            Demo persona
-            <select
-              id="persona"
-              aria-label="Demo persona"
-              value={actor?.membershipId ?? ""}
-              disabled={login.isPending}
-              onChange={(event) => {
-                if (event.target.value) login.mutate(event.target.value);
-              }}
+          <div className="topbar-actions">
+            <label className="persona-label" htmlFor="persona">
+              Demo persona
+              <select
+                id="persona"
+                aria-label="Demo persona"
+                value={actor?.membershipId ?? ""}
+                disabled={login.isPending}
+                onChange={(event) => {
+                  if (event.target.value) login.mutate(event.target.value);
+                }}
+              >
+                <option value="">Choose a persona</option>
+                {personas.data?.map((persona) => (
+                  <option key={persona.id} value={persona.id}>
+                    {persona.name} · {roleLabels[persona.role]} · {persona.workspaceName}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <a
+              className="repository-link secondary"
+              href="https://github.com/KleitonBarone/customer-onboarding"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              <option value="">Choose a persona</option>
-              {personas.data?.map((persona) => (
-                <option key={persona.id} value={persona.id}>
-                  {persona.name} · {roleLabels[persona.role]} · {persona.workspaceName}
-                </option>
-              ))}
-            </select>
-          </label>
+              <Icon name="github" />
+              View on GitHub
+              <Icon name="external" />
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          </div>
         </header>
         <main id="main-content" tabIndex={-1}>
           {isBrowserDemo && (
@@ -144,6 +159,7 @@ export function App() {
                 className="secondary"
                 onClick={() => window.location.assign("/")}
               >
+                <Icon name="reset" />
                 Reset demo
               </button>
             </section>
@@ -174,6 +190,7 @@ export function App() {
           ) : id ? (
             <>
               <button type="button" className="text-button back" onClick={() => navigate(null)}>
+                <Icon name="arrow-left" />
                 Back to {actor.role === "customer" ? "your onboarding" : "queue"}
               </button>
               {detail.isPending ? (
@@ -183,6 +200,7 @@ export function App() {
                   <h1>Onboarding unavailable</h1>
                   <p role="alert">{detail.error.message}</p>
                   <button type="button" onClick={() => navigate(null)}>
+                    <Icon name="list" />
                     Return to your workspace
                   </button>
                 </section>
